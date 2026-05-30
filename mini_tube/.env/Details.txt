@@ -1,0 +1,5 @@
+mkdir mini_tube
+cd mini_tube
+code main.py
+
+pip install fastapi,unicorn,sqlalchemy, werkzeug
