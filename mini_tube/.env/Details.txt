@@ -2,4 +2,9 @@ mkdir mini_tube
 cd mini_tube
 code main.py
 
-pip install fastapi,unicorn,sqlalchemy, werkzeug
+pip install fastapi,uvicorn,sqlalchemy, werkzeug
+
+python -m uvicorn main:app --reload
+
+npm create vite@latest frontend
+1.45
