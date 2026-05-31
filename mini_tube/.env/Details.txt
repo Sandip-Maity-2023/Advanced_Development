@@ -3,8 +3,15 @@ cd mini_tube
 code main.py
 
 pip install fastapi,uvicorn,sqlalchemy, werkzeug
+npm install bootstrap
 
+http://127.0.0.1:8000/videos
 python -m uvicorn main:app --reload
 
 npm create vite@latest frontend
+
+npm run dev
+
+https://www.youtube.com/watch?v=Y6j0wlGwFzI&t=6354s
+
 1.45

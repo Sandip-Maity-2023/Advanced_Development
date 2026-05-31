@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Form,UploadFile,HTTPException,Depends
+from fastapi import FastAPI,Form,UploadFile,HTTPException,Depends,File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text, DateTime
@@ -99,7 +99,7 @@ def login(
 def upload_video(
     title: str = Form(...),
     description: str = Form(...),
-    file: UploadFile = Form(...),
+    file: UploadFile = File(...),
     token: str = Form(...),
     db: Session = Depends(get_db)
 ):
@@ -112,12 +112,13 @@ def upload_video(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid token")
     
-    file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}_{file.filename}")
+    filename = f"{uuid.uuid4().hex}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
     
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
     
-    video = Video(title=title, description=description, filename=filename, user_id=user.id)
+    video = Video(title=title, description=description, filename=file_path, user_id=user.id)
     db.add(video)
     db.commit()
     db.refresh(video)
@@ -128,13 +129,15 @@ def upload_video(
 @app.get("/videos")
 def list_videos(db: Session = Depends(get_db)):
     videos = db.query(Video).all()
-    return [{"id": v.id, "title": v.title, "description": v.description, "likes": v.likes, "uploader_id": v.user.username} for v in videos]
+    return [{"id": v.id, "title": v.title, "description": v.description, "likes": v.likes, "uploader_id": v.user.username if v.user else None} for v in videos]
 
-@app.get("/videos/{video_id}")
+@app.get("/video/{video_id}")
 def get_video(video_id: int, db: Session = Depends(get_db)):
     video = db.query(Video).filter(Video.id == video_id).first()
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
+    if not os.path.exists(video.filename):
+        raise HTTPException(status_code=404, detail="Video file not found")
     return FileResponse(video.filename, media_type="video/mp4")
 
 @app.post("/like/{video_id}")
@@ -147,20 +150,15 @@ def like_video(video_id: int, token: str = Form(...), db: Session = Depends(get_
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    video = db.query(Like).filter(Video.id == video_id).first()
-    if not video:
-        raise HTTPException(status_code=400, detail="Video not found")
-    
-        existing_like = db.query(Like).filter(Like.user_id == user.id, Like.video_id == video.id).first()
-        if existing_like:
-            db.delete(existing_like)
-            video.likes -= 1
-            like = False
-        else:
-            like = Like(user_id=user.id, video_id=video.id)
-            db.add(like)
-            video.likes += 1
-            liked= True
+    existing_like = db.query(Like).filter(Like.user_id == user.id, Like.video_id == video.id).first()
+    if existing_like:
+        db.delete(existing_like)
+        video.likes = max((video.likes or 0) - 1, 0)
+        liked = False
+    else:
+        db.add(Like(user_id=user.id, video_id=video.id))
+        video.likes = (video.likes or 0) + 1
+        liked = True
 
     db.commit()
     return {"likes": video.likes, "liked": liked}
@@ -186,6 +184,8 @@ def add_comment(video_id: int, content: str = Form(...), token: str = Form(...),
         raise HTTPException(status_code=400, detail="Invalid token")
     if not content.strip():
         raise HTTPException(status_code=400, detail="Comment cannot be empty")
+    if not db.query(Video).filter(Video.id == video_id).first():
+        raise HTTPException(status_code=404, detail="Video not found")
     
     comment = Comment(content=content, user_id=user.id, video_id=video_id)
     db.add(comment)
@@ -209,8 +209,17 @@ def delete_video(video_id: int, token: str = Form(...), db: Session = Depends(ge
 
     try:
         os.remove(video.filename)
-        db.delete(video)
-        db.commit()
+    except FileNotFoundError:
+        pass
     except OSError:
         raise HTTPException(status_code=500, detail="Error occurred while deleting video file")
+
+    try:
+        db.query(Like).filter(Like.video_id == video.id).delete()
+        db.query(Comment).filter(Comment.video_id == video.id).delete()
+        db.delete(video)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error occurred while deleting video")
     return {"message": "Video deleted successfully"}
