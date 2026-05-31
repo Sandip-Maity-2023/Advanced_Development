@@ -1,6 +1,10 @@
+FastAPI + React Js -> https://gemini.google.com/share/e17471b0c2c8
+
 mkdir mini_tube
 cd mini_tube
 code main.py
+
+python -m venv .env 
 
 pip install fastapi,uvicorn,sqlalchemy, werkzeug
 npm install bootstrap
