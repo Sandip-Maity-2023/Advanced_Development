@@ -8,7 +8,7 @@ function App() {
 
   const [page,setPage] = useState("home");
   const [user,setUser] = useState(() => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
     return token ? {token, username: token} : null;
   });
   const [videos,setVideos] = useState([]);
