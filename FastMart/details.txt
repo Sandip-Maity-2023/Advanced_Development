@@ -1,0 +1,6 @@
+npm create vite@latest
+npm install bcryptjs, cloudinary, cors, dotenv, express, jsonwebtoken, mongoose, multer, nodemailer, razorpay
+npm init
+
+npm i -D "nodemon"
+
