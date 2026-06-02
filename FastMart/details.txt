@@ -4,3 +4,4 @@ npm init
 
 npm i -D "nodemon"
 
+npm install react-redux @reduxjs/toolkit
