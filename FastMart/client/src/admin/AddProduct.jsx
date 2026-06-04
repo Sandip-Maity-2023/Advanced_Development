@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,28 +7,36 @@ const AddProduct = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', category: '', stock: ''
+    name: '', description: '', price: '', category: '', stock: '', imageUrl: ''
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  if (!user || user.role !== 'admin') {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== 'admin') return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!image) return alert('Please select an image');
+    if (!image && !formData.imageUrl.trim()) {
+      return setError('Please upload an image or paste an image URL');
+    }
     
     setLoading(true);
+    setError('');
     const data = new FormData();
     data.append('name', formData.name);
     data.append('description', formData.description);
     data.append('price', formData.price);
     data.append('category', formData.category);
     data.append('stock', formData.stock);
-    data.append('image', image);
+    data.append('imageUrl', formData.imageUrl.trim());
+    if (image) data.append('image', image);
 
     try {
       const res = await fetch('/api/products', {
@@ -40,12 +48,13 @@ const AddProduct = () => {
       
       if (res.ok) {
         alert('Product created successfully with Cloudinary Image URL!');
-        navigate('/shop');
+        navigate('/admin/products');
       } else {
-        alert(responseData.message || 'Error creating product');
+        setError(responseData.message || 'Error creating product');
       }
     } catch (error) {
       console.error(error);
+      setError('Could not connect to the server. Make sure the API is running.');
     } finally {
       setLoading(false);
     }
@@ -54,6 +63,7 @@ const AddProduct = () => {
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', background: '#18181b', padding: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
       <h2 style={{ color: '#f97316', marginBottom: '20px' }}>Add New Product</h2>
+      {error && <p style={{ color: '#f87171', marginBottom: '15px' }}>{error}</p>}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <input 
           type="text" placeholder="Product Name" required 
@@ -80,11 +90,17 @@ const AddProduct = () => {
           onChange={(e) => setFormData({...formData, stock: e.target.value})} 
           style={inputStyle} 
         />
+        <input
+          type="url" placeholder="Image URL"
+          value={formData.imageUrl}
+          onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+          style={inputStyle}
+        />
         
         <div style={{ padding: '15px', border: '1px dashed #f97316', borderRadius: '8px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', color: '#a1a1aa' }}>Upload Product Image (Cloudinary)</label>
+          <label style={{ display: 'block', marginBottom: '10px', color: '#a1a1aa' }}>Upload Product Image (Optional)</label>
           <input 
-            type="file" accept="image/*" required 
+            type="file" accept="image/*"
             onChange={(e) => setImage(e.target.files[0])} 
             style={{ color: '#fff' }}
           />

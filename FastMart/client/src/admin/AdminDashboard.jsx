@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
           </div>
           <div style={cardStyle}>
             <h4 style={{ color: '#a1a1aa', fontSize: '1rem' }}>Total Revenue</h4>
-            <div style={numberStyle}>₹{stats.totalRevenue.toFixed(2)}</div>
+            <div style={numberStyle}>Rs. {Number(stats.totalRevenue).toFixed(2)}</div>
           </div>
         </div>
       ) : (
@@ -88,9 +88,9 @@ const AdminDashboard = () => {
         <h3 style={{ marginBottom: '25px', color: '#f97316' }}>Administrative Controls</h3>
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
           <button className="btn" onClick={() => navigate('/admin/add-product')}>+ Add Product</button>
-          <button className="btn" onClick={() => navigate('/admin/products')} style={{ background: '#3f3f46' }}>📦 Manage Products</button>
-          <button className="btn" onClick={() => navigate('/admin/orders')} style={{ background: '#3f3f46' }}>🚚 Manage Orders</button>
-          <button className="btn" onClick={() => navigate('/admin/users')} style={{ background: '#3f3f46' }}>👥 Users Directory</button>
+          <button className="btn" onClick={() => navigate('/admin/products')} style={{ background: '#3f3f46' }}>Manage Products</button>
+          <button className="btn" onClick={() => navigate('/admin/orders')} style={{ background: '#3f3f46' }}>Manage Orders</button>
+          <button className="btn" onClick={() => navigate('/admin/users')} style={{ background: '#3f3f46' }}>Users Directory</button>
         </div>
       </div>
     </div>

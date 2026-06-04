@@ -1,24 +1,44 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AdminUsers = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+
     const fetchUsers = async () => {
-      const res = await fetch('/api/auth/users', {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
+      try {
+        const res = await fetch('/api/auth/users', {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || 'Unable to load users');
+          return;
+        }
+        setUsers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(error);
+        setError('Could not connect to the server. Make sure the API is running.');
+      }
     };
     fetchUsers();
-  }, [user]);
+  }, [user, navigate]);
+
+  if (!user || user.role !== 'admin') return null;
 
   return (
     <div style={containerStyle}>
       <h2 style={{ color: '#f97316', marginBottom: '20px' }}>User Directory</h2>
+      {error && <p style={{ color: '#f87171', marginBottom: '15px' }}>{error}</p>}
       <div style={{ overflowX: 'auto' }}>
         <table style={tableStyle}>
           <thead>
@@ -44,6 +64,11 @@ const AdminUsers = () => {
                 <td style={tdStyle}>{new Date(u.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
+            {users.length === 0 && (
+              <tr style={rowStyle}>
+                <td style={tdStyle} colSpan="5">No users found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

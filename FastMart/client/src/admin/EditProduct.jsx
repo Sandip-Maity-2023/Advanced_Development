@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -7,51 +7,88 @@ const EditProduct = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', category: '', stock: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', category: '', stock: '', imageUrl: '' });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+
     const fetchProduct = async () => {
-      const res = await fetch(`/api/products/${id}`);
-      const data = await res.json();
-      setFormData({ name: data.name, description: data.description, price: data.price, category: data.category, stock: data.stock });
+      try {
+        const res = await fetch(`/api/products/${id}`);
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || 'Unable to load product');
+          return;
+        }
+        setFormData({
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          category: data.category,
+          stock: data.stock,
+          imageUrl: data.imageUrl || ''
+        });
+      } catch (error) {
+        console.error(error);
+        setError('Could not connect to the server. Make sure the API is running.');
+      }
     };
     fetchProduct();
-  }, [id]);
+  }, [id, user, navigate]);
+
+  if (!user || user.role !== 'admin') return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     const data = new FormData();
     data.append('name', formData.name);
     data.append('description', formData.description);
     data.append('price', formData.price);
     data.append('category', formData.category);
     data.append('stock', formData.stock);
+    data.append('imageUrl', formData.imageUrl.trim());
     if (image) data.append('image', image);
 
-    const res = await fetch(`/api/products/${id}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${user.token}` },
-      body: data
-    });
-    setLoading(false);
-    if (res.ok) {
-      alert('Product updated successfully!');
-      navigate('/admin/products');
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${user.token}` },
+        body: data
+      });
+      const responseData = await res.json();
+      if (res.ok) {
+        alert('Product updated successfully!');
+        navigate('/admin/products');
+      } else {
+        setError(responseData.message || 'Unable to update product');
+      }
+    } catch (error) {
+      console.error(error);
+      setError('Could not connect to the server. Make sure the API is running.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', background: '#18181b', padding: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
       <h2 style={{ color: '#f97316', marginBottom: '20px' }}>Edit Product</h2>
+      {error && <p style={{ color: '#f87171', marginBottom: '15px' }}>{error}</p>}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <input type="text" placeholder="Product Name" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={inputStyle} />
         <textarea placeholder="Description" required rows="4" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} style={inputStyle} />
         <input type="number" placeholder="Price" required value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} style={inputStyle} />
         <input type="text" placeholder="Category" required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} style={inputStyle} />
         <input type="number" placeholder="Stock" required value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} style={inputStyle} />
+        <input type="url" placeholder="Image URL" value={formData.imageUrl} onChange={(e) => setFormData({...formData, imageUrl: e.target.value})} style={inputStyle} />
         <div style={{ padding: '15px', border: '1px dashed #f97316', borderRadius: '8px' }}>
           <label style={{ display: 'block', marginBottom: '10px', color: '#a1a1aa' }}>Replace Image (Optional)</label>
           <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} style={{ color: '#fff' }} />

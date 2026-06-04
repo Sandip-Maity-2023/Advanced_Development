@@ -1,35 +1,63 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AdminOrders = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+
     const fetchOrders = async () => {
-      const res = await fetch('/api/orders', {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      const data = await res.json();
-      setOrders(Array.isArray(data) ? data : []);
+      try {
+        const res = await fetch('/api/orders', {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || 'Unable to load orders');
+          return;
+        }
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(error);
+        setError('Could not connect to the server. Make sure the API is running.');
+      }
     };
     fetchOrders();
-  }, [user]);
+  }, [user, navigate]);
 
   const updateStatus = async (id, status) => {
-    const res = await fetch(`/api/orders/${id}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
-      body: JSON.stringify({ status })
-    });
-    if (res.ok) {
-      setOrders(orders.map(order => order._id === id ? { ...order, status } : order));
+    try {
+      const res = await fetch(`/api/orders/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOrders(orders.map(order => order._id === id ? { ...order, status } : order));
+      } else {
+        setError(data.message || 'Unable to update order status');
+      }
+    } catch (error) {
+      console.error(error);
+      setError('Could not connect to the server. Make sure the API is running.');
     }
   };
+
+  if (!user || user.role !== 'admin') return null;
 
   return (
     <div style={containerStyle}>
       <h2 style={{ color: '#f97316', marginBottom: '20px' }}>Manage Orders</h2>
+      {error && <p style={{ color: '#f87171', marginBottom: '15px' }}>{error}</p>}
       <div style={{ overflowX: 'auto' }}>
         <table style={tableStyle}>
           <thead>
@@ -46,7 +74,7 @@ const AdminOrders = () => {
               <tr key={order._id} style={rowStyle}>
                 <td style={tdStyle}>{order._id.substring(0, 8)}...</td>
                 <td style={tdStyle}>{order.userId?.name || 'Deleted User'}</td>
-                <td style={tdStyle}>₹{order.totalAmount.toFixed(2)}</td>
+                <td style={tdStyle}>Rs. {Number(order.totalAmount).toFixed(2)}</td>
                 <td style={tdStyle}>{new Date(order.createdAt).toLocaleDateString()}</td>
                 <td style={tdStyle}>
                   <select 
@@ -61,6 +89,11 @@ const AdminOrders = () => {
                 </td>
               </tr>
             ))}
+            {orders.length === 0 && (
+              <tr style={rowStyle}>
+                <td style={tdStyle} colSpan="5">No orders found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

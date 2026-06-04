@@ -5,3 +5,14 @@ npm init
 npm i -D "nodemon"
 
 npm install react-redux @reduxjs/toolkit
+
+ npm run make-admin -- manashmaity721447@gmail.com
+
+ https://github.com/ShivaMani02/shopnest-ecom-MERN/blob/master/README.md
+
+ https://github.com/ShivaMani02/shopnest-ecom-MERN/tree/master/backend/routes
+
+ https://www.youtube.com/watch?v=MkDtqjlSx1U&t=18582s
+
+ https://console.cloudinary.com/app/c-36e789501472f2142e666c18cc4edc/settings/api-keys
+ 

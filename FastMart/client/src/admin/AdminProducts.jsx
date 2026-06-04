@@ -1,31 +1,57 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const AdminProducts = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+
     const fetchProducts = async () => {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || 'Unable to load products');
+          return;
+        }
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(error);
+        setError('Could not connect to the server. Make sure the API is running.');
+      }
     };
     fetchProducts();
-  }, []);
+  }, [user, navigate]);
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you strictly sure you want to delete this?')) {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      if (res.ok) {
-        setProducts(products.filter(p => p._id !== id));
+      try {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setProducts(products.filter(p => p._id !== id));
+        } else {
+          setError(data.message || 'Unable to delete product');
+        }
+      } catch (error) {
+        console.error(error);
+        setError('Could not connect to the server. Make sure the API is running.');
       }
     }
   };
+
+  if (!user || user.role !== 'admin') return null;
 
   return (
     <div style={containerStyle}>
@@ -33,6 +59,7 @@ const AdminProducts = () => {
         <h2 style={{ color: '#f97316' }}>Manage Products</h2>
         <Link to="/admin/add-product" className="btn">+ Add Product</Link>
       </div>
+      {error && <p style={{ color: '#f87171', marginBottom: '15px' }}>{error}</p>}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={tableStyle}>
@@ -51,7 +78,7 @@ const AdminProducts = () => {
               <tr key={product._id} style={rowStyle}>
                 <td style={tdStyle}>{product._id.substring(0, 8)}...</td>
                 <td style={tdStyle}>{product.name}</td>
-                <td style={tdStyle}>₹{product.price.toFixed(2)}</td>
+                <td style={tdStyle}>Rs. {Number(product.price).toFixed(2)}</td>
                 <td style={tdStyle}>{product.category}</td>
                 <td style={tdStyle}>{product.stock}</td>
                 <td style={tdStyle}>
@@ -60,6 +87,11 @@ const AdminProducts = () => {
                 </td>
               </tr>
             ))}
+            {products.length === 0 && (
+              <tr style={rowStyle}>
+                <td style={tdStyle} colSpan="6">No products found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
