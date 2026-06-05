@@ -5,3 +5,5 @@ python -m venv .venv
 uv --version
 
 .\.venv\Scripts\Activate.ps1
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+ uv pip install -r requirements.txt
