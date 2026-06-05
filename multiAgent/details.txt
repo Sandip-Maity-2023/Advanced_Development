@@ -1,0 +1,7 @@
+python --version
+
+python -m pip install uv
+python -m venv .venv
+uv --version
+
+.\.venv\Scripts\Activate.ps1
