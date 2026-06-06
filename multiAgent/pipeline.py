@@ -1,5 +1,7 @@
+#This is the Streamlit frontend for your multi-agent research system.
+
 import streamlit as st
-import time
+import time             #For timestamps and simulating delays.
 from agents import (
     build_reader_agent,
     build_search_agent,
@@ -16,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── Custom CSS ─────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
@@ -296,7 +298,8 @@ details summary {
 """, unsafe_allow_html=True)
 
 
-# ── Helper: render a step card ────────────────────────────────────────────────
+# Creates the pipeline status cards.
+# ── Helper: render a step card ───────────────────────────
 def step_card(num: str, title: str, state: str, desc: str = ""):
     status_map = {
         "waiting": ("WAITING", "status-waiting"),
@@ -317,13 +320,13 @@ def step_card(num: str, title: str, state: str, desc: str = ""):
     """, unsafe_allow_html=True)
 
 
-# ── Session state init ────────────────────────────────────────────────────────
+# ── Session state init ─────────────────────────
 for key in ("results", "running", "done"):
     if key not in st.session_state:
         st.session_state[key] = {} if key == "results" else False
 
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
+# ── Hero ────────────────────────────────────────
 st.markdown("""
 <div class="hero">
     <div class="hero-eyebrow">Multi-Agent AI System</div>
@@ -400,7 +403,7 @@ with col_pipeline:
     step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
 
 
-# ── Run pipeline ──────────────────────────────────────────────────────────────
+# ── Run pipeline ─────────────────────────
 if run_btn:
     if not topic.strip():
         st.warning("Please enter a research topic first.")
@@ -414,7 +417,7 @@ if st.session_state.running and not st.session_state.done:
     results = {}
     topic_val = st.session_state.topic_input
 
-    # ── Step 1: Search ──
+    # ── Step 1: Search ── # This is where the Search Agent uses the web_search tool to find relevant information on the topic. The results are stored in session state and displayed in the pipeline cards.
     with st.spinner("🔍  Search Agent is working…"):
         search_agent = build_search_agent()
         sr = search_agent.invoke({
@@ -424,7 +427,7 @@ if st.session_state.running and not st.session_state.done:
         st.session_state.results = dict(results)
     st.rerun() if False else None   # keep inline for now
 
-    # ── Step 2: Reader ──
+    # ── Step 2: Reader ── # This is where the Reader Agent scrapes the most relevant webpage for deeper content.
     with st.spinner("📄  Reader Agent is scraping top resources…"):
         reader_agent = build_reader_agent()
         rr = reader_agent.invoke({
@@ -437,7 +440,7 @@ if st.session_state.running and not st.session_state.done:
         results["reader"] = response_to_text(rr["messages"][-1].content)
         st.session_state.results = dict(results)
 
-    # ── Step 3: Writer ──
+    # ── Step 3: Writer ── # This is where the Writer Chain takes all the gathered research and drafts a structured report. The prompt instructs the writer to create an introduction, key findings, and a conclusion based on the search results and scraped content.
     with st.spinner("✍️  Writer is drafting the report…"):
         research_combined = (
             f"SEARCH RESULTS:\n{results['search']}\n\n"
@@ -449,7 +452,7 @@ if st.session_state.running and not st.session_state.done:
         })
         st.session_state.results = dict(results)
 
-    # ── Step 4: Critic ──
+    # ── Step 4: Critic ── # Finally, the Critic Chain reviews the drafted report and provides feedback. This step is crucial for improving the quality of the output and ensuring that the report is insightful and well-structured.
     with st.spinner("🧐  Critic is reviewing the report…"):
         results["critic"] = critic_chain.invoke({
             "report": results["writer"]
@@ -461,7 +464,7 @@ if st.session_state.running and not st.session_state.done:
     st.rerun()
 
 
-# ── Results display ───────────────────────────────────────────────────────────
+# ── Results display ──────────────────────── # This section displays the outputs from each step of the pipeline. It uses Streamlit's expanders to show raw outputs from the Search and Reader agents, and prominently displays the final report and critic feedback in styled panels. Users can also download the final report as a markdown file.
 r = st.session_state.results
 
 if r:

@@ -12,4 +12,18 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
  https://github.com/AkarshVyas/Multi-agent-research-system/blob/main/pipeline.py
 
- 
+ tools.py
+│
+├── web_search()
+└── scrape_url()
+
+agents.py
+│
+├── Search Agent
+├── Reader Agent
+├── Writer Chain
+└── Critic Chain
+
+app.py (this file)
+│
+└── Streamlit UI

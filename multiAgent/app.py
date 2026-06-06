@@ -317,6 +317,7 @@ def step_card(num: str, title: str, state: str, desc: str = ""):
     """, unsafe_allow_html=True)
 
 
+
 # ── Session state init ────────────────────────────────────────────────────────
 for key in ("results", "running", "done"):
     if key not in st.session_state:
@@ -400,7 +401,7 @@ with col_pipeline:
     step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
 
 
-# ── Run pipeline ──────────────────────────────────────────────────────────────
+# ── Run pipeline ───────────────────────────
 if run_btn:
     if not topic.strip():
         st.warning("Please enter a research topic first.")
@@ -461,7 +462,7 @@ if st.session_state.running and not st.session_state.done:
     st.rerun()
 
 
-# ── Results display ───────────────────────────────────────────────────────────
+# ── Results display ───────────────────────────
 r = st.session_state.results
 
 if r:
@@ -506,7 +507,7 @@ if r:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ── Footer ────────────────────────────────────────────────────────────────────
+# ── Footer ────────────────────────────────────────
 st.markdown("""
 <div class="notice">
     ResearchMind - Powered by Gemini, LangChain multi-agent pipeline, and Streamlit
