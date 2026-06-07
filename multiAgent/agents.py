@@ -136,3 +136,17 @@ critic_chain = critic_prompt | llm | StrOutputParser()
 
 
 #This architecture is a common agentic research pipeline where agents gather information, a writer synthesizes it into a report, and a critic performs quality control.
+
+
+from document_agent import search_documents
+
+# Document Agent
+
+def build_document_agent():
+    from document_agent import search_documents
+
+    return create_agent(
+        model=llm,
+        tools=[search_documents]
+    )
+

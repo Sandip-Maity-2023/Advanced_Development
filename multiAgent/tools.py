@@ -6,20 +6,31 @@ import os                        #For accessing environment variables, which is 
 from dotenv import load_dotenv   #Loads environment variables from a .env file, allowing you to keep sensitive information like API keys out of your codebase.
 load_dotenv()
 
-tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
 @tool
 def web_search(query : str) -> str:
     """Search the web for recent and reliable information on a topic . Returns Titles , URLs and snippets."""
-    results = tavily.search(query=query,max_results=5)
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_api_key:
+        return "TAVILY_API_KEY is missing. Add it to .env to enable web search."
+
+    try:
+        tavily = TavilyClient(api_key=tavily_api_key)
+        results = tavily.search(query=query, max_results=5)
+    except Exception as e:
+        return f"Web search failed: {str(e)}"
 
     out = []
 
-    for r in results['results']:
+    for r in results.get("results", []):
         out.append(
-            f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['content'][:300]}\n"   #Only keeps the first 300 characters.Without this, results could become extremely large.
+            f"Title: {r.get('title', 'Untitled')}\n"
+            f"URL: {r.get('url', 'No URL')}\n"
+            f"Snippet: {r.get('content', '')[:300]}\n"   #Only keeps the first 300 characters.Without this, results could become extremely large.
         )
-    
+
+    if not out:
+        return "No web search results were returned."
+
     return "\n----\n".join(out)
 
 
@@ -30,6 +41,7 @@ def scrape_url(url: str) -> str:
     """Scrape and return clean text content from a given URL for deeper reading."""
     try:
         resp = requests.get(url, timeout=8, headers={"User-Agent": "Mozilla/5.0"})  #Makes the request look like a browser.Some sites block requests that don't have a User-Agent.
+        resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")                              #Converts HTML into a searchable structure
         for tag in soup(["script", "style", "nav", "footer"]):                      #Removes:because they usually contain:JavaScript,CSS,menus,footer links,and not useful article content.
             tag.decompose()
