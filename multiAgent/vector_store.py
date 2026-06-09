@@ -1,8 +1,6 @@
 
 import os
 from dotenv import load_dotenv
-from langchain_community.vectorstores import Cassandra
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
@@ -33,11 +31,13 @@ def get_vector_store():
     try:
         from gevent import monkey
 
-        monkey.patch_socket()
+        monkey.patch_all()
     except ImportError:
         pass
 
     import cassio
+    from langchain_community.vectorstores import Cassandra
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
     cassio.init(
         token=token,
