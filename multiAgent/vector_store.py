@@ -1,10 +1,11 @@
-
 import os
 from dotenv import load_dotenv
+import streamlit as st
 
 load_dotenv()
 
 vector_store = None
+
 
 def get_vector_store():
     global vector_store
@@ -12,25 +13,43 @@ def get_vector_store():
     if vector_store is not None:
         return vector_store
 
-    token = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
-    database_id = os.getenv("ASTRA_DB_ID") or os.getenv("ASTRA_DB_DATABASE_ID")
-    gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    # Read from local .env OR Streamlit Cloud Secrets
+    token = (
+        os.getenv("ASTRA_DB_APPLICATION_TOKEN")
+        or st.secrets.get("ASTRA_DB_APPLICATION_TOKEN")
+    )
+
+    database_id = (
+        os.getenv("ASTRA_DB_ID")
+        or os.getenv("ASTRA_DB_DATABASE_ID")
+        or st.secrets.get("ASTRA_DB_ID")
+        or st.secrets.get("ASTRA_DB_DATABASE_ID")
+    )
+
+    gemini_api_key = (
+        os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_API_KEY")
+        or st.secrets.get("GEMINI_API_KEY")
+        or st.secrets.get("GOOGLE_API_KEY")
+    )
 
     missing = [
         name
         for name, value in {
             "ASTRA_DB_APPLICATION_TOKEN": token,
-            "ASTRA_DB_ID or ASTRA_DB_DATABASE_ID": database_id,
-            "GEMINI_API_KEY or GOOGLE_API_KEY": gemini_api_key,
+            "ASTRA_DB_ID": database_id,
+            "GEMINI_API_KEY": gemini_api_key,
         }.items()
         if not value
     ]
+
     if missing:
-        raise RuntimeError("Missing environment variables: " + ", ".join(missing))
+        raise RuntimeError(
+            f"Missing environment variables: {', '.join(missing)}"
+        )
 
     try:
         from gevent import monkey
-
         monkey.patch_all()
     except ImportError:
         pass
