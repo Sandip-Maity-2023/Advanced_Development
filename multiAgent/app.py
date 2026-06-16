@@ -1,3 +1,5 @@
+
+# #app.py
 # import streamlit as st
 # import time
 # from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain
@@ -108,6 +110,20 @@
 #     text-transform: uppercase !important;
 #     color: #ff8c32 !important;
 #     font-weight: 500 !important;
+# }
+
+# /* File Uploader styling overrides to blend in seamlessly */
+# .stFileUploader section {
+#     background: rgba(255,255,255,0.02) !important;
+#     border: 1px dashed rgba(255,140,50,0.25) !important;
+#     border-radius: 10px !important;
+# }
+# .stFileUploader label {
+#     font-family: 'DM Mono', monospace !important;
+#     font-size: 0.72rem !important;
+#     letter-spacing: 0.15em !important;
+#     text-transform: uppercase !important;
+#     color: #ff8c32 !important;
 # }
 
 # /* ── Button ── */
@@ -342,6 +358,14 @@
 #         key="topic_input",
 #         label_visibility="visible",
 #     )
+    
+#     # ── Upload Document Block ──
+#     uploaded_file = st.file_uploader(
+#         "Upload a Context Document (Optional)",
+#         type=["txt", "pdf"]
+#     )
+    
+#     st.markdown('<div style="margin-top: 1rem;"></div>', unsafe_allow_html=True)
 #     run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
 #     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -378,10 +402,8 @@
 #         steps = ["search", "reader", "writer", "critic"]
 #         idx = steps.index(step)
 #         completed = list(r.keys())
-#         # figure out which steps are done
 #         if step in r:
 #             return "done"
-#         # which step is running now (first not in r)
 #         if st.session_state.running:
 #             for i, k in enumerate(steps):
 #                 if k not in r:
@@ -408,6 +430,20 @@
 #     results = {}
 #     topic_val = st.session_state.topic_input
 
+#     # Extract text content if a file was uploaded
+#     uploaded_text_content = ""
+#     if uploaded_file is not None:
+#         try:
+#             if uploaded_file.type == "text/plain":
+#                 uploaded_text_content = uploaded_file.read().decode("utf-8")
+#             elif uploaded_file.type == "application/pdf":
+#                 # Fallback implementation. Requires pypdf to read PDF bytes natively.
+#                 import pypdf
+#                 pdf_reader = pypdf.PdfReader(uploaded_file)
+#                 uploaded_text_content = "\n".join([page.extract_text() for page in pdf_reader.pages if page.extract_text()])
+#         except Exception as e:
+#             st.error(f"Error parsing uploaded file: {e}")
+
 #     # ── Step 1: Search ──
 #     with st.spinner("🔍  Search Agent is working…"):
 #         search_agent = build_search_agent()
@@ -416,7 +452,6 @@
 #         })
 #         results["search"] = sr["messages"][-1].content
 #         st.session_state.results = dict(results)
-#     st.rerun() if False else None   # keep inline for now
 
 #     # ── Step 2: Reader ──
 #     with st.spinner("📄  Reader Agent is scraping top resources…"):
@@ -437,6 +472,10 @@
 #             f"SEARCH RESULTS:\n{results['search']}\n\n"
 #             f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
 #         )
+#         # Inject custom uploaded document content if it exists
+#         if uploaded_text_content:
+#             research_combined += f"\n\nUSER UPLOADED DOCUMENT CONTEXT:\n{uploaded_text_content}"
+
 #         results["writer"] = writer_chain.invoke({
 #             "topic": topic_val,
 #             "research": research_combined
@@ -462,7 +501,6 @@
 #     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 #     st.markdown('<div class="section-heading">Results</div>', unsafe_allow_html=True)
 
-#     # Raw outputs in expanders
 #     if "search" in r:
 #         with st.expander("🔍 Search Results (raw)", expanded=False):
 #             st.markdown(f'<div class="result-panel"><div class="result-panel-title">Search Agent Output</div>'
@@ -473,16 +511,14 @@
 #             st.markdown(f'<div class="result-panel"><div class="result-panel-title">Reader Agent Output</div>'
 #                         f'<div class="result-content">{r["reader"]}</div></div>', unsafe_allow_html=True)
 
-#     # Final report
 #     if "writer" in r:
 #         st.markdown("""
 #         <div class="report-panel">
 #             <div class="panel-label orange">📝 Final Research Report</div>
 #         """, unsafe_allow_html=True)
-#         st.markdown(r["writer"])   # render markdown natively
+#         st.markdown(r["writer"])
 #         st.markdown("</div>", unsafe_allow_html=True)
 
-#         # Download
 #         st.download_button(
 #             label="⬇  Download Report (.md)",
 #             data=r["writer"],
@@ -490,7 +526,6 @@
 #             mime="text/markdown",
 #         )
 
-#     # Critic feedback
 #     if "critic" in r:
 #         st.markdown("""
 #         <div class="feedback-panel">
@@ -525,9 +560,9 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 /* ── Reset & base ── */
-html, body, [class*="css"] {
+html, body, [class*="css"], .stMarkdown {
     font-family: 'DM Sans', sans-serif;
-    color: #e8e4dc;
+    color: #e8e4dc !important;
 }
 
 .stApp {
@@ -535,6 +570,11 @@ html, body, [class*="css"] {
     background-image:
         radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,140,50,0.12) 0%, transparent 60%),
         radial-gradient(ellipse 60% 40% at 80% 110%, rgba(255,80,30,0.08) 0%, transparent 55%);
+}
+
+/* Ensure all native headers inside markdown stand out clearly */
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown p, .stMarkdown li {
+    color: #f5f2eb !important;
 }
 
 /* ── Hide default streamlit chrome ── */
@@ -563,7 +603,7 @@ html, body, [class*="css"] {
     font-weight: 800;
     line-height: 1.0;
     letter-spacing: -0.03em;
-    color: #f0ebe0;
+    color: #f0ebe0 !important;
     margin: 0 0 1rem;
 }
 .hero h1 span {
@@ -572,7 +612,7 @@ html, body, [class*="css"] {
 .hero-sub {
     font-size: 1.05rem;
     font-weight: 300;
-    color: #a09890;
+    color: #a09890 !important;
     max-width: 520px;
     margin: 0 auto;
     line-height: 1.65;
@@ -597,10 +637,10 @@ html, body, [class*="css"] {
 
 /* ── Streamlit input overrides ── */
 .stTextInput > div > div > input {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,140,50,0.25) !important;
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,140,50,0.3) !important;
     border-radius: 10px !important;
-    color: #f0ebe0 !important;
+    color: #ffffff !important; /* Forces typed user text to be bright white */
     font-family: 'DM Sans', sans-serif !important;
     font-size: 1rem !important;
     padding: 0.75rem 1rem !important;
@@ -608,7 +648,7 @@ html, body, [class*="css"] {
 }
 .stTextInput > div > div > input:focus {
     border-color: #ff8c32 !important;
-    box-shadow: 0 0 0 3px rgba(255,140,50,0.12) !important;
+    box-shadow: 0 0 0 3px rgba(255,140,50,0.2) !important;
 }
 .stTextInput > label {
     font-family: 'DM Mono', monospace !important;
@@ -617,6 +657,11 @@ html, body, [class*="css"] {
     text-transform: uppercase !important;
     color: #ff8c32 !important;
     font-weight: 500 !important;
+}
+/* Style text box placeholder text explicitly */
+::placeholder {
+    color: rgba(245,240,230,0.35) !important;
+    opacity: 1;
 }
 
 /* File Uploader styling overrides to blend in seamlessly */
@@ -742,7 +787,7 @@ html, body, [class*="css"] {
 .result-content {
     font-size: 0.92rem;
     line-height: 1.8;
-    color: #cdc8bf;
+    color: #e2ded5 !important; /* Brighter readable gray for raw console panels */
     white-space: pre-wrap;
     font-family: 'DM Sans', sans-serif;
 }
@@ -782,11 +827,14 @@ html, body, [class*="css"] {
 /* ── Progress text ── */
 .stSpinner > div { color: #ff8c32 !important; }
 
-/* ── Expander ── */
+/* ── Expander overrides to guarantee contrast ── */
+stProgress, details, details summary, [data-testid="stExpander"] p {
+    color: #e8e4dc !important;
+}
 details summary {
     font-family: 'DM Mono', monospace !important;
     font-size: 0.75rem !important;
-    color: #a09890 !important;
+    color: #ff8c32 !important; /* Highlights expander action headers */
     letter-spacing: 0.1em !important;
     cursor: pointer;
 }
@@ -804,7 +852,7 @@ details summary {
 .notice {
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
-    color: #605850;
+    color: #7a7269;
     text-align: center;
     margin-top: 3rem;
     letter-spacing: 0.08em;
@@ -829,7 +877,7 @@ def step_card(num: str, title: str, state: str, desc: str = ""):
             <span class="step-title">{title}</span>
             <span class="step-status {cls}">{label}</span>
         </div>
-        {"<div style='font-size:0.82rem;color:#706860;margin-top:0.3rem;'>"+desc+"</div>" if desc else ""}
+        {"<div style='font-size:0.82rem;color:#a0958a;margin-top:0.3rem;'>"+desc+"</div>" if desc else ""}
     </div>
     """, unsafe_allow_html=True)
 
@@ -879,7 +927,7 @@ with col_input:
     # Example chips
     st.markdown("""
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
-        <span style="font-family:'DM Mono',monospace;font-size:0.68rem;color:#605850;letter-spacing:0.1em;">TRY →</span>
+        <span style="font-family:'DM Mono',monospace;font-size:0.68rem;color:#8a8075;letter-spacing:0.1em;">TRY →</span>
     """, unsafe_allow_html=True)
     examples = ["LLM agents 2025", "CRISPR gene editing", "Fusion energy progress"]
     for ex in examples:
@@ -890,7 +938,7 @@ with col_input:
             border-radius:6px;
             padding:0.25rem 0.7rem;
             font-size:0.75rem;
-            color:#a09890;
+            color:#cdc5ba;
             font-family:'DM Sans',sans-serif;
             cursor:default;
         ">{ex}</span>
@@ -944,7 +992,6 @@ if st.session_state.running and not st.session_state.done:
             if uploaded_file.type == "text/plain":
                 uploaded_text_content = uploaded_file.read().decode("utf-8")
             elif uploaded_file.type == "application/pdf":
-                # Fallback implementation. Requires pypdf to read PDF bytes natively.
                 import pypdf
                 pdf_reader = pypdf.PdfReader(uploaded_file)
                 uploaded_text_content = "\n".join([page.extract_text() for page in pdf_reader.pages if page.extract_text()])
@@ -979,7 +1026,6 @@ if st.session_state.running and not st.session_state.done:
             f"SEARCH RESULTS:\n{results['search']}\n\n"
             f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
         )
-        # Inject custom uploaded document content if it exists
         if uploaded_text_content:
             research_combined += f"\n\nUSER UPLOADED DOCUMENT CONTEXT:\n{uploaded_text_content}"
 

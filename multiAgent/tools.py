@@ -34,7 +34,7 @@ def web_search(query : str) -> str:
 
     for r in results['results']:
         out.append(
-            f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['content'][:300]}\n"
+            f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['content'][:100]}\n"
         )
     
     return "\n----\n".join(out)
@@ -49,6 +49,6 @@ def scrape_url(url: str) -> str:
         soup = BeautifulSoup(resp.text, "html.parser")                             #Converts HTML into a searchable structure.
         for tag in soup(["script", "style", "nav", "footer"]):
             tag.decompose()                                     #delete those tags
-        return soup.get_text(separator=" ", strip=True)[:3000]  #Converts webpage into plain text.
+        return soup.get_text(separator=" ", strip=True)[:1000]  #Converts webpage into plain text.
     except Exception as e:
         return f"Could not scrape URL: {str(e)}"
