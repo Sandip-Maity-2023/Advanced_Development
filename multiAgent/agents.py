@@ -154,6 +154,7 @@
 
 
 # agents.py
+
 import os
 from dotenv import load_dotenv
 
@@ -179,7 +180,11 @@ try:
 except ImportError:
     STREAMLIT_AVAILABLE = False
 
-
+def get_secret(key):
+    try:
+        return st.secrets[key]
+    except Exception:
+        return None
 # ---------------------------------------------------
 # Gemini Model Configuration
 # ---------------------------------------------------
@@ -210,13 +215,13 @@ def get_api_key():
         return api_key
 
     if STREAMLIT_AVAILABLE:
-        api_key = (
-            st.secrets.get("GEMINI_API_KEY")
-            or st.secrets.get("GOOGLE_API_KEY")
-        )
+       api_key = (
+        get_secret("GEMINI_API_KEY")
+        or get_secret("GOOGLE_API_KEY")
+    )
 
-        if api_key:
-            return api_key
+       if api_key:
+        return api_key
 
     raise RuntimeError(
         "Missing GEMINI_API_KEY or GOOGLE_API_KEY.\n"
@@ -289,48 +294,63 @@ def response_to_text(content) -> str:
 # ---------------------------------------------------
 # Search Agent
 # ---------------------------------------------------
-
-def build_search_agent():
-    """
-    Agent capable of web searching.
-    """
-
-    return create_agent(
-        model=llm,
-        tools=[web_search],
-    )
+if STREAMLIT_AVAILABLE:
+    @st.cache_resource
+    def build_search_agent():
+        return create_agent(
+            model=llm,
+            tools=[web_search],
+        )
+else:
+    def build_search_agent():
+        return create_agent(
+            model=llm,
+            tools=[web_search],
+        )
 
 
 # ---------------------------------------------------
 # Reader Agent
 # ---------------------------------------------------
 
-def build_reader_agent():
-    """
-    Agent capable of scraping URL content.
-    """
-
-    return create_agent(
-        model=llm,
-        tools=[scrape_url],
-    )
+if STREAMLIT_AVAILABLE:
+    @st.cache_resource
+    def build_reader_agent():
+        return create_agent(
+            model=llm,
+            tools=[scrape_url],
+        )
+else:
+    def build_reader_agent():
+        return create_agent(
+            model=llm,
+            tools=[scrape_url],
+        )
 
 
 # ---------------------------------------------------
 # Document Agent
 # ---------------------------------------------------
 
-def build_document_agent():
-    """
-    Agent capable of searching local documents.
-    """
+if STREAMLIT_AVAILABLE:
+    @st.cache_resource
+    def build_document_agent():
 
-    from document_agent import search_documents
+        from document_agent import search_documents
 
-    return create_agent(
-        model=llm,
-        tools=[search_documents],
-    )
+        return create_agent(
+            model=llm,
+            tools=[search_documents],
+        )
+else:
+    def build_document_agent():
+
+        from document_agent import search_documents
+
+        return create_agent(
+            model=llm,
+            tools=[search_documents],
+        )
 
 
 # ---------------------------------------------------

@@ -174,6 +174,13 @@ def show_text_result(label: str, text: str):
         """,
         unsafe_allow_html=True,
     )
+def get_agent_text(result):
+    try:
+        return response_to_text(
+            result["messages"][-1].content
+        )
+    except Exception:
+        return str(result)
 
 
 def is_quota_error(exc: Exception) -> bool:
@@ -263,7 +270,7 @@ def index_uploaded_pdfs(uploaded_files):
         if file_key in st.session_state.processed_uploads:
             continue
 
-        safe_name = Path(uploaded.name).name
+        safe_name = f"{int(time.time())}_{Path(uploaded.name).name}"
         file_path = UPLOAD_DIR / safe_name
         file_path.write_bytes(uploaded.getbuffer())
 
@@ -351,7 +358,7 @@ def run_research(topic: str, use_web: bool, use_docs: bool):
                     ]
                 },
             )
-            results["search"] = response_to_text(sr["messages"][-1].content)
+            results["search"] = get_agent_text(sr)
             st.session_state.results = dict(results)
 
         with st.spinner("Reader Agent is reading the strongest web source..."):
@@ -369,7 +376,7 @@ def run_research(topic: str, use_web: bool, use_docs: bool):
                     ]
                 },
             )
-            results["reader"] = response_to_text(rr["messages"][-1].content)
+            results["reader"] = get_agent_text(rr)
             st.session_state.results = dict(results)
 
     if use_docs:
@@ -387,7 +394,7 @@ def run_research(topic: str, use_web: bool, use_docs: bool):
                     ]
                 },
             )
-            results["documents"] = response_to_text(dr["messages"][-1].content)
+            results["documents"] = get_agent_text(dr)
             st.session_state.results = dict(results)
 
     research_parts = []
@@ -421,9 +428,8 @@ def run_research(topic: str, use_web: bool, use_docs: bool):
 
 
 def compare_documents(left_name: str, right_name: str, focus: str):
-    left = st.session_state.document_texts.get(left_name, "")[:12000]
-    right = st.session_state.document_texts.get(right_name, "")[:12000]
-
+    left = st.session_state.document_texts.get(left_name, "")[:20000]
+    right = st.session_state.document_texts.get(right_name, "")[:20000]
     response = invoke_with_retry(
         "Document comparison",
         llm.invoke,
