@@ -1,82 +1,51 @@
-# # #document_agent.py
-# # from langchain.tools import tool
-# # from vector_store import get_vector_store
+import streamlit as st
+from pypdf import PdfReader
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-# # @tool
-# # def search_documents(query: str) -> str:
-# #     """
-# #     Search uploaded documents and return relevant content.
-# #     """
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=st.secrets["GEMINI_API_KEY"]
+)
 
-# #     vector_store = get_vector_store()
+def extract_text(uploaded_file):
+    if uploaded_file.name.endswith(".txt"):
+        return uploaded_file.read().decode("utf-8")
 
-# #     docs = vector_store.similarity_search(
-# #         query,
-# #         k=5
-# #     )
+    if uploaded_file.name.endswith(".pdf"):
+        reader = PdfReader(uploaded_file)
+        text = ""
 
-# #     if not docs:
-# #         return "No matching uploaded document content was found."
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
 
-# #     results = []
+        return text
 
-# #     for doc in docs:
+    return ""
 
-# #         source = doc.metadata.get(
-# #             "source",
-# #             "unknown"
-# #         )
+st.title("Document Q&A")
 
-# #         results.append(
-# #             f"Source: {source}\n"
-# #             f"{doc.page_content[:1000]}"
-# #         )
+uploaded_file = st.file_uploader(
+    "Upload PDF or TXT",
+    type=["pdf", "txt"]
+)
 
-# #     return "\n\n---\n\n".join(results)
+question = st.text_input("Ask a question")
 
+if uploaded_file and question:
 
-# from langchain.tools import tool
-# from vector_store import get_vector_store
+    document_text = extract_text(uploaded_file)
 
+    prompt = f"""
+    Use only the document below.
 
-# @tool
-# def search_documents(query: str) -> str:
-#     """
-#     Search uploaded documents and return relevant content.
-#     """
+    DOCUMENT:
+    {document_text}
 
-#     try:
-#         vector_store = get_vector_store()
+    QUESTION:
+    {question}
+    """
 
-#         docs = vector_store.similarity_search(
-#             query,
-#             k=5
-#         )
+    response = llm.invoke(prompt)
 
-#         if not docs:
-#             return (
-#                 "No matching uploaded document "
-#                 "content was found."
-#             )
-
-#         results = []
-
-#         for doc in docs:
-
-#             source = doc.metadata.get(
-#                 "source",
-#                 "unknown"
-#             )
-
-#             results.append(
-#                 f"Source: {source}\n"
-#                 f"{doc.page_content[:1000]}"
-#             )
-
-#         return "\n\n---\n\n".join(results)
-
-#     except Exception as e:
-#         return (
-#             f"Document retrieval failed: "
-#             f"{str(e)}"
-#         )
+    st.write(response.content)
+    
