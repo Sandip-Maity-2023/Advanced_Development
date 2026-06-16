@@ -1,10 +1,37 @@
+# This code is the orchestrator of your AI research system. Think of it as a project manager coordinating multiple AI workers:
+
+# Search Agent → finds information
+# Reader Agent → reads/scrapes the best source
+# Writer Chain → writes a report
+# Critic Chain → reviews the report
+
+# User Topic
+#      ↓
+# Search Agent
+#      ↓
+# Search Results
+#      ↓
+# Reader Agent
+#      ↓
+# Detailed Content
+#      ↓
+# Writer Chain
+#      ↓
+# Research Report
+#      ↓
+# Critic Chain
+#      ↓
+# Feedback
+
+#pipeline.py
 from agents import build_reader_agent , build_search_agent , writer_chain , critic_chain
 
+#Creates a function that: Takes a research topic, Runs all AI workers, Returns results
 def run_research_pipeline(topic : str) -> dict:
 
-    state = {}
+    state = {} #Stores outputs from every stage.
 
-    #search agent working 
+    #search agent working just printing style
     print("\n"+" ="*50)
     print("step 1 - search agent is working ...")
     print("="*50)
@@ -31,12 +58,12 @@ def run_research_pipeline(topic : str) -> dict:
         )]
     })
 
-    state['scraped_content'] = reader_result['messages'][-1].content
+    state['scraped_content'] = reader_result['messages'][-1].content  #-1 ->last message in the conversation, .content -> the actual text of that message
 
     print("\nscraped content: \n", state['scraped_content'])
 
-    #step 3 - writer chain 
 
+    #step 3 - writer chain 
     print("\n"+" ="*50)
     print("step 3 - Writer is drafting the report ...")
     print("="*50)
@@ -53,10 +80,10 @@ def run_research_pipeline(topic : str) -> dict:
 
     print("\n Final Report\n",state['report'])
 
-    #critic report 
 
+    #critic report 
     print("\n"+" ="*50)
-    print("step 4 - critic is reviewing the report ")
+    print("step 4 - critic is reviewing the report ") #Now another LLM reviews the report.
     print("="*50)
 
     state["feedback"] = critic_chain.invoke({
@@ -72,3 +99,5 @@ def run_research_pipeline(topic : str) -> dict:
 if __name__ == "__main__":
     topic = input("\n Enter a research topic : ")
     run_research_pipeline(topic)
+
+# There is only one brain (Gemini), but you ask it to perform different jobs.

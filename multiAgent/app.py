@@ -506,3 +506,4 @@ st.markdown("""
     ResearchMind · Powered by LangChain multi-agent pipeline · Built with Streamlit
 </div>
 """, unsafe_allow_html=True)
+
