@@ -1,3 +1,4 @@
+#tools.py
 from langchain.tools import tool #The @tool decorator converts a normal Python function into a LangChain tool.
 import requests                  #For making HTTP requests to fetch webpage content.
 from bs4 import BeautifulSoup    #For parsing HTML and extracting text from webpages.

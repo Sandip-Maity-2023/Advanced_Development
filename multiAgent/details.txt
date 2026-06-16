@@ -27,3 +27,5 @@ agents.py
 app.py (this file)
 │
 └── Streamlit UI
+
+streamlit run app.python

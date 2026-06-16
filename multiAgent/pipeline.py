@@ -1,1 +1,2 @@
-from app import *  # noqa: F401,F403
+# #pipeline.py
+# from app import *  # noqa: F401,F403

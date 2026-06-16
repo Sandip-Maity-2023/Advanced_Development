@@ -1,3 +1,4 @@
+#vector_store.py
 import os
 from dotenv import load_dotenv
 import streamlit as st
@@ -13,6 +14,7 @@ def get_vector_store():
     if vector_store is not None:
         return vector_store
 
+    
     # Read from local .env OR Streamlit Cloud Secrets
     token = (
         os.getenv("ASTRA_DB_APPLICATION_TOKEN")
