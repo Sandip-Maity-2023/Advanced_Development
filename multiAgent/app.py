@@ -1,623 +1,508 @@
-#app.py
-import html
-import re
-import time
-from pathlib import Path
-
 import streamlit as st
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import time
+from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain
 
-from agents import (
-    build_document_agent,
-    build_reader_agent,
-    build_search_agent,
-    critic_chain,
-    llm,
-    response_to_text,
-    writer_chain,
-)
-from document_processor import extract_pdf_text
-from vector_store import get_vector_store
-
-
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-
-QUOTA_MARKERS = ("RESOURCE_EXHAUSTED", "429", "quota", "rate-limit", "rate limit")
-TRANSIENT_MARKERS = (
-    "Connection aborted",
-    "RemoteDisconnected",
-    "temporarily unavailable",
-    "timeout",
-    "timed out",
-    "503",
-    "504",
-)
-
-
+# ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="ResearchMind - Gemini Multi-Agent Research",
-    page_icon="AI",
+    page_title="ResearchMind · AI Research Agent",
+    page_icon="🔬",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-
-st.markdown(
-    """
+# ── Custom CSS ────────────────────────────────────────────────────────────────
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
+/* ── Reset & base ── */
 html, body, [class*="css"] {
     font-family: 'DM Sans', sans-serif;
-    color: #ece8df;
+    color: #e8e4dc;
 }
+
 .stApp {
-    background:
-        radial-gradient(ellipse 70% 45% at 18% -10%, rgba(255, 140, 50, 0.12), transparent 60%),
-        radial-gradient(ellipse 45% 35% at 85% 110%, rgba(57, 183, 142, 0.08), transparent 58%),
-        #090a0f;
+    background: #0a0a0f;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,140,50,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(255,80,30,0.08) 0%, transparent 55%);
 }
+
+/* ── Hide default streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { max-width: 1240px; padding: 2rem 3rem 4rem; }
-.hero { padding: 2.5rem 0 1.5rem; }
-.hero-kicker {
-    color: #ff8c32;
-    font: 500 0.72rem 'DM Mono', monospace;
-    letter-spacing: 0.22em;
+.block-container { padding: 2rem 3rem 4rem; max-width: 1200px; }
+
+/* ── Hero header ── */
+.hero {
+    text-align: center;
+    padding: 3.5rem 0 2.5rem;
+    position: relative;
+}
+.hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
+    color: #ff8c32;
+    margin-bottom: 1rem;
+    opacity: 0.9;
 }
 .hero h1 {
     font-family: 'Syne', sans-serif;
-    font-size: clamp(2.4rem, 5vw, 4.5rem);
-    line-height: 1;
-    margin: 0.7rem 0 0.75rem;
-    color: #f3efe6;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    color: #f0ebe0;
+    margin: 0 0 1rem;
 }
-.hero h1 span { color: #ff8c32; }
-.hero p { color: #aca49a; max-width: 760px; line-height: 1.65; }
+.hero h1 span {
+    color: #ff8c32;
+}
+.hero-sub {
+    font-size: 1.05rem;
+    font-weight: 300;
+    color: #a09890;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.65;
+}
+
+/* ── Divider ── */
 .divider {
     height: 1px;
-    margin: 1.5rem 0 2rem;
-    background: linear-gradient(90deg, transparent, rgba(255,140,50,0.32), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,140,50,0.3), transparent);
+    margin: 2rem 0;
 }
-.metric-strip {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.8rem;
-    margin: 1rem 0 1.5rem;
-}
-.metric-box {
-    border: 1px solid rgba(255,255,255,0.08);
+
+/* ── Input card ── */
+.input-card {
     background: rgba(255,255,255,0.03);
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
+    border: 1px solid rgba(255,140,50,0.15);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(8px);
 }
-.metric-label {
-    font: 500 0.65rem 'DM Mono', monospace;
-    letter-spacing: 0.16em;
-    color: #7f786f;
-    text-transform: uppercase;
+
+/* ── Streamlit input overrides ── */
+.stTextInput > div > div > input {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,140,50,0.25) !important;
+    border-radius: 10px !important;
+    color: #f0ebe0 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 1rem !important;
+    padding: 0.75rem 1rem !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
 }
-.metric-value {
-    color: #f3efe6;
+.stTextInput > div > div > input:focus {
+    border-color: #ff8c32 !important;
+    box-shadow: 0 0 0 3px rgba(255,140,50,0.12) !important;
+}
+.stTextInput > label {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    color: #ff8c32 !important;
+    font-weight: 500 !important;
+}
+
+/* ── Button ── */
+.stButton > button {
+    background: linear-gradient(135deg, #ff8c32 0%, #ff5a1a 100%) !important;
+    color: #0a0a0f !important;
+    font-family: 'Syne', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.04em !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.7rem 2.2rem !important;
+    cursor: pointer !important;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s !important;
+    box-shadow: 0 4px 20px rgba(255,140,50,0.3) !important;
+    width: 100%;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 28px rgba(255,140,50,0.4) !important;
+    opacity: 0.95 !important;
+}
+.stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+/* ── Pipeline step cards ── */
+.step-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1.5rem 1.8rem;
+    margin-bottom: 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+}
+.step-card.active {
+    border-color: rgba(255,140,50,0.4);
+    background: rgba(255,140,50,0.04);
+}
+.step-card.done {
+    border-color: rgba(80,200,120,0.3);
+    background: rgba(80,200,120,0.03);
+}
+.step-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 14px 0 0 14px;
+    background: rgba(255,255,255,0.05);
+    transition: background 0.3s;
+}
+.step-card.active::before { background: #ff8c32; }
+.step-card.done::before   { background: #50c878; }
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.3rem;
+}
+.step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: #ff8c32;
+    opacity: 0.7;
+}
+.step-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
     font-weight: 700;
-    margin-top: 0.3rem;
+    color: #f0ebe0;
 }
+.step-status {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+}
+.status-waiting  { color: #555; }
+.status-running  { color: #ff8c32; }
+.status-done     { color: #50c878; }
+
+/* ── Result panels ── */
 .result-panel {
-    border: 1px solid rgba(255,255,255,0.08);
     background: rgba(255,255,255,0.025);
-    border-radius: 8px;
-    padding: 1.2rem 1.4rem;
-    margin: 1rem 0;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1.8rem 2rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+.result-panel-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #ff8c32;
+    margin-bottom: 1rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid rgba(255,140,50,0.15);
+}
+.result-content {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: #cdc8bf;
+    white-space: pre-wrap;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Report & feedback panels ── */
+.report-panel {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,140,50,0.2);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    margin-top: 1rem;
+}
+.feedback-panel {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(80,200,120,0.2);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    margin-top: 1rem;
 }
 .panel-label {
-    color: #ff8c32;
-    font: 500 0.7rem 'DM Mono', monospace;
-    letter-spacing: 0.18em;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.7rem;
 }
-.stTabs [data-baseweb="tab-list"] { gap: 0.5rem; }
-.stTabs [data-baseweb="tab"] {
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    padding: 0.65rem 1rem;
-    background: rgba(255,255,255,0.025);
+.panel-label.orange {
+    color: #ff8c32;
+    border-bottom: 1px solid rgba(255,140,50,0.15);
 }
-.stButton > button, .stDownloadButton > button {
-    border-radius: 8px !important;
-    border: 0 !important;
-    background: linear-gradient(135deg, #ff8c32, #ff5a1a) !important;
-    color: #08090d !important;
-    font-weight: 800 !important;
+.panel-label.green {
+    color: #50c878;
+    border-bottom: 1px solid rgba(80,200,120,0.15);
 }
-textarea, input { color: #f3efe6 !important; }
-@media (max-width: 760px) {
-    .block-container { padding: 1.25rem; }
-    .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ── Progress text ── */
+.stSpinner > div { color: #ff8c32 !important; }
+
+/* ── Expander ── */
+details summary {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
+    color: #a09890 !important;
+    letter-spacing: 0.1em !important;
+    cursor: pointer;
+}
+
+/* ── Section heading ── */
+.section-heading {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f0ebe0;
+    margin: 2rem 0 1rem;
+}
+
+/* ── Toast-style notice ── */
+.notice {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: #605850;
+    text-align: center;
+    margin-top: 3rem;
+    letter-spacing: 0.08em;
 }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 
-def init_state():
-    defaults = {
-        "results": {},
-        "document_texts": {},
-        "indexed_files": [],
-        "processed_uploads": set(),
-        "last_doc_answer": "",
-        "last_comparison": "",
-        "running": False,
+# ── Helper: render a step card ────────────────────────────────────────────────
+def step_card(num: str, title: str, state: str, desc: str = ""):
+    status_map = {
+        "waiting": ("WAITING", "status-waiting"),
+        "running": ("● RUNNING", "status-running"),
+        "done":    ("✓ DONE",   "status-done"),
     }
-    for key, value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = value
-
-
-def safe_markdown(text: str):
-    st.markdown(text or "")
-
-
-def show_text_result(label: str, text: str):
-    safe = html.escape(text or "")
-    st.markdown(
-        f"""
-        <div class="result-panel">
-            <div class="panel-label">{label}</div>
-            <pre style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;line-height:1.65;color:#d5d0c8;">{safe}</pre>
+    label, cls = status_map.get(state, ("", ""))
+    card_cls = {"running": "active", "done": "done"}.get(state, "")
+    st.markdown(f"""
+    <div class="step-card {card_cls}">
+        <div class="step-header">
+            <span class="step-num">{num}</span>
+            <span class="step-title">{title}</span>
+            <span class="step-status {cls}">{label}</span>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-def get_agent_text(result):
-    try:
-        return response_to_text(
-            result["messages"][-1].content
-        )
-    except Exception:
-        return str(result)
-
-
-def is_quota_error(exc: Exception) -> bool:
-    message = str(exc)
-    return any(marker.lower() in message.lower() for marker in QUOTA_MARKERS)
-
-
-def is_transient_error(exc: Exception) -> bool:
-    message = str(exc)
-    return any(marker.lower() in message.lower() for marker in TRANSIENT_MARKERS)
-
-
-def retry_delay_from_error(exc: Exception) -> str:
-    message = str(exc)
-    retry_delay = re.search(r"'retryDelay': '(\d+)s'", message)
-    if retry_delay:
-        return f"{retry_delay.group(1)} seconds"
-
-    retry_in = re.search(r"retry in ([\d.]+)s", message, re.IGNORECASE)
-    if retry_in:
-        return f"{round(float(retry_in.group(1)))} seconds"
-
-    return "a short while"
-
-
-def user_error_message(exc: Exception) -> str:
-    message = str(exc)
-    if message.startswith("Gemini quota is exhausted"):
-        return message
-
-    if "remote service closed the connection" in message.lower():
-        return message
-
-    if is_quota_error(exc):
-        return (
-            "Gemini quota is exhausted for the selected model. "
-            f"Wait about {retry_delay_from_error(exc)}, switch GEMINI_MODEL in .env "
-            "to another available model, or use a paid/higher-quota API key."
-        )
-
-    if is_transient_error(exc):
-        return (
-            "A remote service closed the connection before responding. "
-            "The app retried the call, but the service still did not respond. "
-            "Try again in a moment."
-        )
-
-    return str(exc)
-
-
-def invoke_with_retry(label: str, func, *args, attempts: int = 3, **kwargs):
-    for attempt in range(attempts):
-        try:
-            return func(*args, **kwargs)
-        except Exception as exc:
-            if is_quota_error(exc):
-                raise RuntimeError(user_error_message(exc)) from exc
-
-            if is_transient_error(exc) and attempt < attempts - 1:
-                time.sleep(2 * (attempt + 1))
-                continue
-
-            if is_transient_error(exc):
-                raise RuntimeError(f"{label}: {user_error_message(exc)}") from exc
-
-            raise
-
-
-def split_pdf_text(text: str):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1200,
-        chunk_overlap=180,
-        separators=["\n\n", "\n", ". ", " ", ""],
-    )
-    return [chunk for chunk in splitter.split_text(text) if chunk.strip()]
-
-
-def index_uploaded_pdfs(uploaded_files):
-    if not uploaded_files:
-        return []
-
-    vector_store = get_vector_store()
-    indexed = []
-
-    for uploaded in uploaded_files:
-        file_key = f"{uploaded.name}:{uploaded.size}"
-        if file_key in st.session_state.processed_uploads:
-            continue
-
-        safe_name = f"{int(time.time())}_{Path(uploaded.name).name}"
-        file_path = UPLOAD_DIR / safe_name
-        file_path.write_bytes(uploaded.getbuffer())
-
-        text = extract_pdf_text(file_path)
-        if not text.strip():
-            st.warning(f"No extractable text found in {safe_name}.")
-            continue
-
-        chunks = split_pdf_text(text)
-        if not chunks:
-            st.warning(f"No usable text chunks created for {safe_name}.")
-            continue
-
-        vector_store.add_texts(
-            texts=chunks,
-            metadatas=[
-                {
-                    "source": safe_name,
-                    "chunk": idx,
-                    "indexed_at": str(int(time.time())),
-                }
-                for idx, _ in enumerate(chunks)
-            ],
-        )
-
-        st.session_state.document_texts[safe_name] = text
-        st.session_state.indexed_files.append(safe_name)
-        st.session_state.processed_uploads.add(file_key)
-        indexed.append((safe_name, len(chunks)))
-
-    st.session_state.indexed_files = sorted(set(st.session_state.indexed_files))
-    return indexed
-
-
-def ask_documents(question: str) -> str:
-    document_agent = build_document_agent()
-    result = invoke_with_retry(
-        "Document Agent",
-        document_agent.invoke,
-        {
-            "messages": [
-                (
-                    "user",
-                    "Search the uploaded PDFs in AstraDB for evidence related to this question: "
-                    f"{question}",
-                )
-            ]
-        },
-    )
-    context = response_to_text(result["messages"][-1].content)
-
-    answer = invoke_with_retry(
-        "Document answer",
-        llm.invoke,
-        [
-            (
-                "system",
-                "Answer using only the provided uploaded-document context. "
-                "Cite source filenames when available. If the context is insufficient, say so.",
-            ),
-            (
-                "human",
-                f"Question:\n{question}\n\nUploaded-document context:\n{context}",
-            ),
-        ]
-    )
-    return response_to_text(answer.content)
-
-
-def run_research(topic: str, use_web: bool, use_docs: bool):
-    results = {}
-
-    if use_web:
-        with st.spinner("Search Agent is gathering web results..."):
-            search_agent = build_search_agent()
-            sr = invoke_with_retry(
-                "Search Agent",
-                search_agent.invoke,
-                {
-                    "messages": [
-                        (
-                            "user",
-                            f"Find recent, reliable and detailed information about: {topic}",
-                        )
-                    ]
-                },
-            )
-            results["search"] = get_agent_text(sr)
-            st.session_state.results = dict(results)
-
-        with st.spinner("Reader Agent is reading the strongest web source..."):
-            reader_agent = build_reader_agent()
-            rr = invoke_with_retry(
-                "Reader Agent",
-                reader_agent.invoke,
-                {
-                    "messages": [
-                        (
-                            "user",
-                            f"Based on these search results about '{topic}', pick the most relevant URL "
-                            f"and scrape it for deeper content.\n\nSearch Results:\n{results['search'][:1200]}",
-                        )
-                    ]
-                },
-            )
-            results["reader"] = get_agent_text(rr)
-            st.session_state.results = dict(results)
-
-    if use_docs:
-        with st.spinner("Document Agent is retrieving uploaded PDF memory..."):
-            document_agent = build_document_agent()
-            dr = invoke_with_retry(
-                "Document Agent",
-                document_agent.invoke,
-                {
-                    "messages": [
-                        (
-                            "user",
-                            f"Search uploaded PDFs in AstraDB for the strongest evidence about: {topic}",
-                        )
-                    ]
-                },
-            )
-            results["documents"] = get_agent_text(dr)
-            st.session_state.results = dict(results)
-
-    research_parts = []
-    if results.get("search"):
-        research_parts.append("WEB SEARCH RESULTS:\n" + results["search"])
-    if results.get("reader"):
-        research_parts.append("DETAILED WEB READING:\n" + results["reader"])
-    if results.get("documents"):
-        research_parts.append("UPLOADED PDF MEMORY:\n" + results["documents"])
-
-    with st.spinner("Writer Chain is drafting the research report..."):
-        results["writer"] = invoke_with_retry(
-            "Writer Chain",
-            writer_chain.invoke,
-            {
-                "topic": topic,
-                "research": "\n\n".join(research_parts),
-            }
-        )
-        st.session_state.results = dict(results)
-
-    with st.spinner("Critic Chain is reviewing the report..."):
-        results["critic"] = invoke_with_retry(
-            "Critic Chain",
-            critic_chain.invoke,
-            {"report": results["writer"]},
-        )
-        st.session_state.results = dict(results)
-
-    return results
-
-
-def compare_documents(left_name: str, right_name: str, focus: str):
-    left = st.session_state.document_texts.get(left_name, "")[:20000]
-    right = st.session_state.document_texts.get(right_name, "")[:20000]
-    response = invoke_with_retry(
-        "Document comparison",
-        llm.invoke,
-        [
-            (
-                "system",
-                "Compare two uploaded PDFs. Be specific, structured, and cite each filename. "
-                "Cover overlap, differences, contradictions, missing details, and a short conclusion.",
-            ),
-            (
-                "human",
-                f"Focus: {focus or 'general comparison'}\n\n"
-                f"Document A ({left_name}):\n{left}\n\n"
-                f"Document B ({right_name}):\n{right}",
-            ),
-        ]
-    )
-    return response_to_text(response.content)
-
-
-init_state()
-
-st.markdown(
-    """
-    <div class="hero">
-        <div class="hero-kicker">Multi-Agent Research Workspace</div>
-        <h1>Research<span>Mind</span></h1>
-        <p>Search the web, index uploaded PDFs into AstraDB memory, ask questions across documents, generate research reports, and compare PDFs from one workspace.</p>
+        {"<div style='font-size:0.82rem;color:#706860;margin-top:0.3rem;'>"+desc+"</div>" if desc else ""}
     </div>
-    <div class="divider"></div>
-    """,
-    unsafe_allow_html=True,
-)
-
-indexed_count = len(st.session_state.indexed_files)
-result_count = len(st.session_state.results)
-st.markdown(
-    f"""
-    <div class="metric-strip">
-        <div class="metric-box"><div class="metric-label">Provider</div><div class="metric-value">Gemini</div></div>
-        <div class="metric-box"><div class="metric-label">Memory</div><div class="metric-value">AstraDB</div></div>
-        <div class="metric-box"><div class="metric-label">PDFs Indexed</div><div class="metric-value">{indexed_count}</div></div>
-        <div class="metric-box"><div class="metric-label">Last Outputs</div><div class="metric-value">{result_count}</div></div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-with st.sidebar:
-    st.subheader("Workspace")
-    if st.session_state.indexed_files:
-        st.write("Indexed PDFs")
-        for name in st.session_state.indexed_files:
-            st.caption(name)
-    else:
-        st.caption("No PDFs indexed yet.")
-
-    if st.button("Clear visible results", use_container_width=True):
-        st.session_state.results = {}
-        st.session_state.last_doc_answer = ""
-        st.session_state.last_comparison = ""
-        st.rerun()
+    """, unsafe_allow_html=True)
 
 
-upload_tab, qa_tab, report_tab, compare_tab = st.tabs(
-    ["Uploaded PDFs", "Multi-PDF QA", "Research Reports", "Document Comparison"]
-)
+# ── Session state init ────────────────────────────────────────────────────────
+for key in ("results", "running", "done"):
+    if key not in st.session_state:
+        st.session_state[key] = {} if key == "results" else False
 
-with upload_tab:
-    st.markdown('<div class="panel-label">Upload and Index</div>', unsafe_allow_html=True)
-    uploaded_files = st.file_uploader(
-        "Upload PDF files",
-        type=["pdf"],
-        accept_multiple_files=True,
-    )
 
-    if st.button("Index PDFs to AstraDB", type="primary", use_container_width=True):
-        try:
-            indexed = index_uploaded_pdfs(uploaded_files)
-            if indexed:
-                for file_name, chunk_count in indexed:
-                    st.success(f"Indexed {file_name} into AstraDB memory ({chunk_count} chunks).")
-            else:
-                st.info("No new PDFs were indexed.")
-        except Exception as exc:
-            st.error(f"PDF indexing failed: {user_error_message(exc)}")
+# ── Hero ──────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="hero">
+    <div class="hero-eyebrow">Multi-Agent AI System</div>
+    <h1>Research<span>Mind</span></h1>
+    <p class="hero-sub">
+        Four specialized AI agents collaborate — searching, scraping, writing,
+        and critiquing — to deliver a polished research report on any topic.
+    </p>
+</div>
+<div class="divider"></div>
+""", unsafe_allow_html=True)
 
-with qa_tab:
-    st.markdown('<div class="panel-label">Ask Uploaded Documents</div>', unsafe_allow_html=True)
-    question = st.text_area(
-        "Question",
-        placeholder="Ask across all PDFs stored in AstraDB memory...",
-        height=120,
-    )
-    if st.button("Ask PDFs", type="primary", use_container_width=True):
-        if not question.strip():
-            st.warning("Enter a question first.")
-        else:
-            try:
-                with st.spinner("Document Agent is answering from PDF memory..."):
-                    st.session_state.last_doc_answer = ask_documents(question.strip())
-            except Exception as exc:
-                st.error(f"Document QA failed: {user_error_message(exc)}")
 
-    if st.session_state.last_doc_answer:
-        show_text_result("Document Answer", st.session_state.last_doc_answer)
+# ── Layout: input left, pipeline right ───────────────────────────────────────
+col_input, col_spacer, col_pipeline = st.columns([5, 0.5, 4])
 
-with report_tab:
-    st.markdown('<div class="panel-label">Research Pipeline</div>', unsafe_allow_html=True)
+with col_input:
+    st.markdown('<div class="input-card">', unsafe_allow_html=True)
     topic = st.text_input(
-        "Research topic",
-        placeholder="e.g. AI agents for clinical research workflows",
+        "Research Topic",
+        placeholder="e.g. Quantum computing breakthroughs in 2025",
         key="topic_input",
+        label_visibility="visible",
     )
-    col_a, col_b = st.columns(2)
-    with col_a:
-        use_web = st.checkbox("Use web search", value=True)
-    with col_b:
-        use_docs = st.checkbox("Use uploaded PDFs", value=bool(st.session_state.indexed_files))
+    run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.button("Run Research Pipeline", type="primary", use_container_width=True):
-        if not topic.strip():
-            st.warning("Please enter a research topic first.")
-        elif not use_web and not use_docs:
-            st.warning("Choose web search, uploaded PDFs, or both.")
-        else:
-            try:
-                st.session_state.results = run_research(topic.strip(), use_web, use_docs)
-            except Exception as exc:
-                st.error(f"Research pipeline failed: {user_error_message(exc)}")
+    # Example chips
+    st.markdown("""
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <span style="font-family:'DM Mono',monospace;font-size:0.68rem;color:#605850;letter-spacing:0.1em;">TRY →</span>
+    """, unsafe_allow_html=True)
+    examples = ["LLM agents 2025", "CRISPR gene editing", "Fusion energy progress"]
+    for ex in examples:
+        st.markdown(f"""
+        <span style="
+            background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:6px;
+            padding:0.25rem 0.7rem;
+            font-size:0.75rem;
+            color:#a09890;
+            font-family:'DM Sans',sans-serif;
+            cursor:default;
+        ">{ex}</span>
+        """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col_pipeline:
+    st.markdown('<div class="section-heading">Pipeline</div>', unsafe_allow_html=True)
 
     r = st.session_state.results
-    if r:
-        if "search" in r:
-            with st.expander("Search Agent Output", expanded=False):
-                st.text(r["search"])
-        if "reader" in r:
-            with st.expander("Reader Agent Output", expanded=False):
-                st.text(r["reader"])
-        if "documents" in r:
-            with st.expander("Uploaded PDF Memory", expanded=False):
-                st.text(r["documents"])
-        if "writer" in r:
-            st.markdown('<div class="panel-label">Final Research Report</div>', unsafe_allow_html=True)
-            safe_markdown(r["writer"])
-            st.download_button(
-                label="Download Report (.md)",
-                data=r["writer"],
-                file_name=f"research_report_{int(time.time())}.md",
-                mime="text/markdown",
-            )
-        if "critic" in r:
-            show_text_result("Critic Feedback", r["critic"])
+    done = st.session_state.done
 
-with compare_tab:
-    st.markdown('<div class="panel-label">Compare Current Uploaded PDFs</div>', unsafe_allow_html=True)
-    sources = st.session_state.indexed_files
-    if len(sources) < 2:
-        st.info("Upload and index at least two PDFs to compare them.")
+    def s(step):
+        if not r:
+            return "waiting"
+        steps = ["search", "reader", "writer", "critic"]
+        idx = steps.index(step)
+        completed = list(r.keys())
+        # figure out which steps are done
+        if step in r:
+            return "done"
+        # which step is running now (first not in r)
+        if st.session_state.running:
+            for i, k in enumerate(steps):
+                if k not in r:
+                    return "running" if k == step else "waiting"
+        return "waiting"
+
+    step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
+    step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
+    step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
+    step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
+
+
+# ── Run pipeline ──────────────────────────────────────────────────────────────
+if run_btn:
+    if not topic.strip():
+        st.warning("Please enter a research topic first.")
     else:
-        left_col, right_col = st.columns(2)
-        with left_col:
-            left_name = st.selectbox("Document A", sources, key="compare_left")
-        with right_col:
-            right_options = [name for name in sources if name != left_name] or sources
-            right_name = st.selectbox("Document B", right_options, key="compare_right")
+        st.session_state.results = {}
+        st.session_state.running = True
+        st.session_state.done = False
+        st.rerun()
 
-        focus = st.text_input(
-            "Comparison focus",
-            placeholder="e.g. methodology, findings, risks, assumptions",
+if st.session_state.running and not st.session_state.done:
+    results = {}
+    topic_val = st.session_state.topic_input
+
+    # ── Step 1: Search ──
+    with st.spinner("🔍  Search Agent is working…"):
+        search_agent = build_search_agent()
+        sr = search_agent.invoke({
+            "messages": [("user", f"Find recent, reliable and detailed information about: {topic_val}")]
+        })
+        results["search"] = sr["messages"][-1].content
+        st.session_state.results = dict(results)
+    st.rerun() if False else None   # keep inline for now
+
+    # ── Step 2: Reader ──
+    with st.spinner("📄  Reader Agent is scraping top resources…"):
+        reader_agent = build_reader_agent()
+        rr = reader_agent.invoke({
+            "messages": [("user",
+                f"Based on the following search results about '{topic_val}', "
+                f"pick the most relevant URL and scrape it for deeper content.\n\n"
+                f"Search Results:\n{results['search'][:800]}"
+            )]
+        })
+        results["reader"] = rr["messages"][-1].content
+        st.session_state.results = dict(results)
+
+    # ── Step 3: Writer ──
+    with st.spinner("✍️  Writer is drafting the report…"):
+        research_combined = (
+            f"SEARCH RESULTS:\n{results['search']}\n\n"
+            f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
         )
-        if st.button("Compare Documents", type="primary", use_container_width=True):
-            try:
-                with st.spinner("Comparing uploaded PDFs..."):
-                    st.session_state.last_comparison = compare_documents(left_name, right_name, focus)
-            except Exception as exc:
-                st.error(f"Document comparison failed: {user_error_message(exc)}")
+        results["writer"] = writer_chain.invoke({
+            "topic": topic_val,
+            "research": research_combined
+        })
+        st.session_state.results = dict(results)
 
-    if st.session_state.last_comparison:
-        show_text_result("Comparison", st.session_state.last_comparison)
+    # ── Step 4: Critic ──
+    with st.spinner("🧐  Critic is reviewing the report…"):
+        results["critic"] = critic_chain.invoke({
+            "report": results["writer"]
+        })
+        st.session_state.results = dict(results)
+
+    st.session_state.running = False
+    st.session_state.done = True
+    st.rerun()
 
 
-st.markdown(
-    """
-    <div class="divider"></div>
-    <div style="font:500 0.72rem 'DM Mono', monospace;color:#686158;text-align:center;letter-spacing:0.08em;">
-        ResearchMind - Gemini, Tavily, Uploaded PDFs, AstraDB Memory, and Streamlit
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# ── Results display ───────────────────────────────────────────────────────────
+r = st.session_state.results
+
+if r:
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-heading">Results</div>', unsafe_allow_html=True)
+
+    # Raw outputs in expanders
+    if "search" in r:
+        with st.expander("🔍 Search Results (raw)", expanded=False):
+            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Search Agent Output</div>'
+                        f'<div class="result-content">{r["search"]}</div></div>', unsafe_allow_html=True)
+
+    if "reader" in r:
+        with st.expander("📄 Scraped Content (raw)", expanded=False):
+            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Reader Agent Output</div>'
+                        f'<div class="result-content">{r["reader"]}</div></div>', unsafe_allow_html=True)
+
+    # Final report
+    if "writer" in r:
+        st.markdown("""
+        <div class="report-panel">
+            <div class="panel-label orange">📝 Final Research Report</div>
+        """, unsafe_allow_html=True)
+        st.markdown(r["writer"])   # render markdown natively
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Download
+        st.download_button(
+            label="⬇  Download Report (.md)",
+            data=r["writer"],
+            file_name=f"research_report_{int(time.time())}.md",
+            mime="text/markdown",
+        )
+
+    # Critic feedback
+    if "critic" in r:
+        st.markdown("""
+        <div class="feedback-panel">
+            <div class="panel-label green">🧐 Critic Feedback</div>
+        """, unsafe_allow_html=True)
+        st.markdown(r["critic"])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ── Footer ────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="notice">
+    ResearchMind · Powered by LangChain multi-agent pipeline · Built with Streamlit
+</div>
+""", unsafe_allow_html=True)
