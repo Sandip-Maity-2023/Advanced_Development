@@ -29,3 +29,9 @@ app.py (this file)
 └── Streamlit UI
 
 streamlit run app.python
+
+https://chatgpt.com/c/6a315b22-1d4c-83ee-b6f5-6f412ccc362b
+https://gemini.google.com/app/f673b226917bc39b?utm_source=sem&utm_medium=paid-media&utm_campaign=q4enIN_sem7&gclid=CjwKCAiAgeeqBhBAEiwAoDDhny6plvJCSiefJQUEKdJA5-2hH_bF1x3biNPjDptemijd9uCE53UkIxoCTeAQAvD_BwE
+
+https://advanceddevelopment-5yzkdbhpswjca4zvggebhn.streamlit.app/
+
