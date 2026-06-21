@@ -1,26 +1,283 @@
-/* Hero Banner */
+/* ==========================================
+   Master Sticky Wrapper Structure
+   ========================================== */
+.sticky-controls-wrapper {
+  position: sticky;
+  top: 80px; /* Adjust this to perfectly match your navbar height */
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  background: rgba(9, 9, 11, 0.95); /* High opacity prevents background components showing through */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* Use explicit transitions for clean scaling instead of height warping */
+  transition: padding 0.3s ease, gap 0.3s ease;
+}
+
+.shop-content-offset {
+  margin-top: 20px;
+}
+
+/* ==========================================
+   Search Input Layout
+   ========================================== */
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 2px 16px;
+  gap: 12px;
+}
+
+.search-icon-react {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.search-input-field {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.95rem;
+  padding: 10px 0;
+}
+.search-input-field:focus { outline: none; }
+
+/* ==========================================
+   Flipkart-Style Category Ribbon 
+   ========================================== */
+.category-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  width: max-content; 
+  max-width: 100%;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 30px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.category-nav-bar::-webkit-scrollbar { display: none; }
+
+/* Navigation Pills Configuration */
+.category-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  gap: 6px;
+  padding: 4px 10px;
+}
+
+.category-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  color: #a1a1aa;
+  font-size: 18px;
+  /* Transform transition provides clean rendering without affecting layout box sizes */
+  transition: transform 0.25s ease, opacity 0.25s ease, width 0.25s ease;
+}
+
+.category-nav-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #a1a1aa;
+  text-transform: capitalize;
+  transition: color 0.2s ease;
+}
+
+/* ==========================================
+   GLITCH FIX: Clean Collapsed State Transitions
+   ========================================== */
+.sticky-controls-wrapper.collapsed-state {
+  padding: 8px 0;
+  gap: 8px;
+}
+
+/* Transform the display layout cleanly on scroll down without moving grid geometry */
+.sticky-controls-wrapper.collapsed-state .category-nav-icon {
+  transform: scale(0);
+  opacity: 0;
+  width: 0;
+  height: 0;
+  border: none;
+  pointer-events: none;
+}
+
+.sticky-controls-wrapper.collapsed-state .category-nav-item {
+  flex-direction: row;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+}
+
+.sticky-controls-wrapper.collapsed-state .category-nav-label {
+  font-size: 0.85rem;
+  color: #ffffff;
+}
+
+/* Target element spacing parameters */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 240px; /* Offsets scroll landings smoothly under shrunk headers */
+}
+
+/* ==========================================
+   Home Master Layout Wrapper
+   ========================================== */
+.home-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 24px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.section-headline {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #ffffff 40%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================
+   Animated Hero Slider Base
+   ========================================== */
 .hero-banner {
-  background: radial-gradient(circle at top right, rgba(249, 115, 22, 0.2), transparent 60%), linear-gradient(135deg, #18181b 0%, #09090b 100%);
   color: white;
-  padding: 100px 30px;
+  padding: 85px 40px 65px 40px;
   text-align: center;
-  border-radius: 16px;
-  margin-bottom: 50px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 20px;
+  margin-bottom: 55px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   position: relative;
   overflow: hidden;
+  /* Dynamic backdrop crossfade transition anchor */
+  transition: background-image 0.5s ease-in-out; 
+}
+
+/* Keyframe mounting slide animation rule wrapper */
+.banner-slide-content {
+  max-width: 700px;
+  margin: 0 auto;
+  animation: slideFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle Mini-Badge Header */
+.banner-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #f97316; /* FastMart Core Accent orange */
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  padding: 6px 14px;
+  border-radius: 30px;
+  display: inline-block;
+  margin-bottom: 24px;
 }
 
 .hero-banner h1 {
-  font-size: 3.5rem;
-  margin-bottom: 20px;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+  line-height: 1.15;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 
 .hero-banner p {
-  font-size: 1.2rem;
-  color: #d4d4d8;
+  font-size: 1.15rem;
+  color: #a1a1aa;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+/* Premium Glass/Solid Button Call To Action */
+.banner-cta-btn {
+  background: #ffffff;
+  color: #09090b;
+  border: none;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255,255,255,0.1);
+  transition: all 0.2s ease;
+}
+
+.banner-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255,255,255,0.2);
+  background: #f4f4f5;
+}
+
+/* ==========================================
+   Carousel Navigation Dots
+   ========================================== */
+.banner-dots-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 45px;
+}
+
+.banner-dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.banner-dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Elongated pill style active index dot indicator */
+.banner-dot.active-dot {
+  width: 24px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 /* Grid & Cards */
@@ -28,7 +285,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 30px;
-  margin-top: 30px;
+  margin-top: 50px;
 }
 
 .product-card {

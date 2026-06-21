@@ -1,14 +1,21 @@
+
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 18px 50px;
-  background: rgba(9, 9, 11, 0.8);
+  
+  /* UPDATED: Smooth gradient shifting from a deep dark tone to a lighter translucent shade */
+  background: linear-gradient(135deg, rgba(9, 9, 11, 0.9) 0%, rgba(40, 40, 45, 0.65) 100%);
+  
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  
+  /* UPDATED: A subtle white border that pops against the dark gradient */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  
   position: sticky;
-  top: 0;
+  top: 15px;
   z-index: 1000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
@@ -37,7 +44,7 @@
 }
 
 .navbar-links a, .navbar-links span {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
   color: #a1a1aa;
   position: relative;

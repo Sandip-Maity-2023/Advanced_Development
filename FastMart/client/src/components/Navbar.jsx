@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useSelector } from 'react-redux';
 import '../styles/navbar.css';
+import brand from '../assets/brand2.png';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -18,11 +19,11 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-brand">
         <Link to="/">
-          <img src="/ShopNestLogo.png" alt="ShopNest" style={{ height: '36px', width: '36px', borderRadius: '8px', objectFit: 'cover', filter: 'drop-shadow(0 2px 8px rgba(249, 115, 22, 0.35))' }} />
-          ShopNest
+          <img src={brand} alt="FastMart" style={{ height: '45px', width: '180px', borderRadius: '8px', objectFit:"cover", filter: 'drop-shadow(0 2px 8px rgba(249, 115, 22, 0.35))' }} />
+          FastMart
         </Link>
       </div>
-      <ul className="navbar-links">
+      <ul className="navbar-links" >
         <li><Link to="/shop">Shop</Link></li>
         <li><Link to="/cart">Cart ({cartItems.length})</Link></li>
         {user ? (
