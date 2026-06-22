@@ -25,14 +25,14 @@ const registerUser = async (req, res) => {
       
       // Send Welcome / OTP Email
       const message = `
-        <h2>Welcome to ShopNest, ${name}!</h2>
+        <h2>Welcome to FastMart, ${name}!</h2>
         <p>Thank you for registering on our platform.</p>
         <p>Your one-time verification/discount OTP is: <strong>${otp}</strong></p>
       `;
 
       await sendEmail({
         email: user.email,
-        subject: 'Welcome to ShopNest - Your OTP',
+        subject: 'Welcome to FastMart - Your OTP',
         message
       });
 
@@ -41,6 +41,9 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        address: user.address,
         token: generateToken(user._id)
       });
     } else {
@@ -62,6 +65,9 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar: user.avatar,
+        phone: user.phone,
+        address: user.address,
         token: generateToken(user._id)
       });
     } else {

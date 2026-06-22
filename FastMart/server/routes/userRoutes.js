@@ -1,33 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User'); 
-const protect = require('../middleware/authMiddleware'); 
+const User = require('../models/User');
+const { protect } = require('../middleware/authMiddleware');
 
 /* ==========================================================================
-   ROUTE: UPDATE USER PROFILE (INCLUDING BASE64 AVATAR) IN MONGODB
+   ROUTE: UPDATE USER PROFILE (Saves Base64 avatar text direct to Mongo)
    PATH: PUT /api/users/profile
    ========================================================================== */
 router.put('/profile', protect, async (req, res) => {
-  console.log("Avatar received: ", req.body.avatar);
   try {
     const user = await User.findById(req.user._id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User profile instance not found.' });
+      return res.status(404).json({ message: 'User profile not found.' });
     }
 
-    // Overwrite schema properties with incoming data
+    // Overwrite schema fields with incoming values or fallback to current database state
     user.name = req.body.name || user.name;
     user.phone = req.body.phone !== undefined ? req.body.phone : user.phone;
     user.address = req.body.address !== undefined ? req.body.address : user.address;
-    
-    // Safely captures the Base64 string from the frontend layout
-    user.avatar = req.body.avatar || user.avatar; 
+    user.avatar = req.body.avatar || user.avatar; // <-- This field receives and commits the image data
 
     const updatedUser = await user.save();
-    console.log("Avatar saved to MongoDB: ", updatedUser.avatar?.substring(0, 50)); // Log a snippet of the saved avatar data
 
-    // Respond with updated data to sync frontend local storage and AuthContext
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -38,8 +33,8 @@ router.put('/profile', protect, async (req, res) => {
       avatar: updatedUser.avatar,
     });
   } catch (error) {
-    console.error("MongoDB Profile Update Error: ", error);
-    res.status(500).json({ message: 'Internal server error overwriting database profile documents.' });
+    console.error(error);
+    res.status(500).json({ message: 'Database error processing profile alterations.' });
   }
 });
 
