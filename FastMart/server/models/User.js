@@ -5,6 +5,13 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+
+  avatar: { 
+    type: String, 
+    default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop' 
+  },
+  phone: { type: String, default: '' },
+  address: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
