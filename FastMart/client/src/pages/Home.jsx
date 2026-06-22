@@ -1,25 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
+import tv from "../assets/Btv.png";
+import phone from "../assets/Bphone.png";
+import Bveg from "../assets/Bveg.png";
+import Breuse from "../assets/Breuse.png";
+import pro from "../assets/Bpro.png";
+import Bimg from "../assets/Bimg.png";
 
-// 1. Array of slides for the dynamic changing banner
 const BANNER_SLIDES = [
   {
     badge: "⚡ LIMITED TIME OFFER",
     title: "Ultimate Gadgets Up To 80% Off",
     subtitle: "Discover lightning-fast delivery on premium, handpicked electronics.",
-    accentColor: "rgba(249, 115, 22, 0.25)" // Orange accent
+    accentColor: "#f97316", // Solid brand theme colors for text accents
+    image: tv
   },
   {
     badge: "🔥 FASHION WEEK REVEAL",
     title: "Elevate Your Daily Style",
     subtitle: "Upgrade your wardrobe with curated fashion collections designed to last.",
-    accentColor: "rgba(59, 130, 246, 0.2)" // Soft blue accent
+    accentColor: "#3b82f6",
+    image: phone
   },
   {
     badge: "🏠 EXCLUSIVE HOME ACCENTS",
     title: "Smart Living, Modern Comfort",
     subtitle: "Explore high-efficiency tech appliances engineered for contemporary homes.",
-    accentColor: "rgba(168, 85, 247, 0.2)" // Purple accent
+    accentColor: "#a855f7",
+    image: Bimg
+  },
+  {
+    badge: "🍎 FRESHNESS GUARANTEED",
+    title: "Farm-to-Doorstep Freshness",
+    subtitle: "Experience the convenience of farm-fresh produce delivered to your door.",
+    accentColor: "#22c55e",
+    image: Bveg
+  },
+  {
+    badge: "♻️ SUSTAINABLE CHOICES",
+    title: "Eco-Friendly Essentials",
+    subtitle: "Shop sustainable products that blend style, function, and planet care.",
+    accentColor: "#10b981",
+    image: Breuse
+  },
+  {
+    badge: "💼 PROFESSIONAL GRADE",
+    title: "Professional-Grade Tools",
+    subtitle: "Access high-performance equipment designed for professionals and enthusiasts.",
+    accentColor: "#8b5cf6",
+    image: pro
   }
 ];
 
@@ -28,7 +57,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // 2. Fetch Featured Products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -44,34 +72,50 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  // 3. Auto-play banner changing loop sequence
   useEffect(() => {
     const slideInterval = setInterval(() => {
       setCurrentSlide((prevIndex) => (prevIndex + 1) % BANNER_SLIDES.length);
-    }, 3000); // Transitions slide content every 5000ms (5 seconds)
+    }, 3000);
 
-    return () => clearInterval(slideInterval); // Clean up interval on unmount
+    return () => clearInterval(slideInterval);
   }, []);
 
   return (
     <div className="home-container">
       
-      {/* 4. DYNAMIC HERO BANNER ACCENT WRAPPER */}
-      <div 
-        className="hero-banner" 
-        style={{
-          backgroundImage: `radial-gradient(circle at top right, ${BANNER_SLIDES[currentSlide].accentColor}, transparent 65%), linear-gradient(135deg, #18181b 0%, #09090b 100%)`
-        }}
-      >
-        {/* Render key-locked animation slides */}
-        <div key={currentSlide} className="banner-slide-content">
-          <span className="banner-badge">{BANNER_SLIDES[currentSlide].badge}</span>
-          <h1>{BANNER_SLIDES[currentSlide].title}</h1>
-          <p>{BANNER_SLIDES[currentSlide].subtitle}</p>
-          <button className="banner-cta-btn">Shop New Arrivals</button>
+      {/* MASTER CAROUSEL WRAPPER */}
+      <div className="premium-hero-card">
+        
+        {/* UPPER IMAGE STAGE: Image scales perfectly here */}
+        <div 
+          className="banner-image-canvas"
+          style={{ backgroundImage: `url(${BANNER_SLIDES[currentSlide].image})` }}
+        />
+
+        {/* LOWER CONTEXT CARD: Text information bar split away from graphic canvas */}
+        <div className="banner-footer-info-bar">
+          <div key={currentSlide} className="banner-slide-content">
+            <span 
+              className="banner-badge" 
+              style={{ 
+                color: BANNER_SLIDES[currentSlide].accentColor,
+                borderColor: `${BANNER_SLIDES[currentSlide].accentColor}33`,
+                background: `${BANNER_SLIDES[currentSlide].accentColor}12`
+              }}
+            >
+              {BANNER_SLIDES[currentSlide].badge}
+            </span>
+            <h1 className="banner-title">{BANNER_SLIDES[currentSlide].title}</h1>
+            <p className="banner-subtitle">{BANNER_SLIDES[currentSlide].subtitle}</p>
+          </div>
+
+          {/* RIGHT CTA POSITIONING PLATFORM */}
+          <div className="banner-action-column">
+            <button className="banner-cta-btn">Shop Now →</button>
+          </div>
         </div>
 
-        {/* 5. SELECTION SLIDE INDICATOR DOTS */}
+        {/* CONTROLLER SELECTION INDICATOR DOTS */}
         <div className="banner-dots-container">
           {BANNER_SLIDES.map((_, index) => (
             <span 
