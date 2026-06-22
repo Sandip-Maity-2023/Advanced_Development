@@ -18,16 +18,23 @@ const Register = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
       });
+      
       const data = await res.json();
+      
       if (res.ok) {
         alert('Registration Successful! Please check your email for the Welcome OTP.');
+        
+        // ✅ FIXED: Passes the complete data packet (including default avatar from backend) 
+        // into your AuthContext state wrapper and localStorage sync keys
         login(data);
+        
         navigate('/');
       } else {
         alert(data.message);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Registration dispatch error: ", error);
+      alert("Network failure processing submission registry endpoints.");
     }
   };
 
@@ -35,9 +42,27 @@ const Register = () => {
     <div className="auth-container">
       <form onSubmit={handleSubmit} className="auth-form">
         <h2>Register</h2>
-        <input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <input 
+          type="text" 
+          placeholder="Full Name" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          required 
+        />
+        <input 
+          type="email" 
+          placeholder="Email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          required 
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)} 
+          required 
+        />
         <button type="submit" className="btn">Register</button>
         <p>Already have an account? <Link to="/login">Login</Link></p>
       </form>
