@@ -1,6 +1,7 @@
 npm create vite@latest
 npm install bcryptjs, cloudinary, cors, dotenv, express, jsonwebtoken, mongoose, multer, nodemailer, razorpay
 npm init
+npm install googleapis
 
 npm i -D "nodemon"
 
@@ -16,3 +17,16 @@ npm install react-redux @reduxjs/toolkit
 
  https://console.cloudinary.com/app/c-36e789501472f2142e666c18cc4edc/settings/api-keys
  
+ PORT=5000
+#MONGO_URI=mongodb://localhost:27017/fastmart
+MONGO_URI=mongodb+srv://12sandip125_db_user:6kPEHvih7KbIsgqi@cluster7.suwkawr.mongodb.net/?appName=Cluster7
+CLOUDINARY_CLOUD_NAME=dabmttnpz
+CLOUDINARY_API_KEY=193355386625345
+CLOUDINARY_API_SECRET=tnIoNo34djgX9NfJ92pQNcEIi6s
+JWT_SECRET=fastmart_secret_2025
+EMAIL_PASS=gerupumfqqyyympf
+EMAIL_USER=12sandip125@gmail.com
+FRONTEND_URL=http://localhost:5173
+RAZORPAY_KEY_ID=xxxrzp_test_T4lGOPK57UshMpxxx
+RAZORPAY_KEY_SECRET=Qgn3IRYcieALEluruI661rRYxxx
+
