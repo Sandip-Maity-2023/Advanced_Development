@@ -7,6 +7,7 @@ const AdminOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
+  const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -16,7 +17,7 @@ const AdminOrders = () => {
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch('/api/orders', {
+        const res = await fetch(`${API}/api/orders`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         const data = await res.json();
@@ -35,7 +36,7 @@ const AdminOrders = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const res = await fetch(`/api/orders/${id}/status`, {
+      const res = await fetch(`${API}/api/orders/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
         body: JSON.stringify({ status })

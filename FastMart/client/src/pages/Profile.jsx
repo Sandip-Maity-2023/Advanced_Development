@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+const API = import.meta.env.VITE_API_URL;
 
 const Profile = () => {
   const { user, login, logout } = useContext(AuthContext); // ✅ use `login` to update user globally
@@ -44,7 +45,7 @@ const Profile = () => {
 
     const fetchMyOrders = async () => {
       try {
-        const res = await fetch('/api/orders/myorders', {
+        const res = await fetch(`${API}/api/orders/myorders`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         const data = await res.json();
@@ -119,7 +120,7 @@ const Profile = () => {
     setSaveStatus(null);
 
     try {
-      const res = await fetch('/api/users/profile', {
+      const res = await fetch(`${API}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

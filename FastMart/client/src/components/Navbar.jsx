@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useSelector } from 'react-redux';
 import '../styles/navbar.css';
 import brand from '../assets/brand2.png';
+const API = import.meta.env.VITE_API_URL;
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);

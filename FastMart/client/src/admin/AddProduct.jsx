@@ -2,6 +2,8 @@ import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API= import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const AddProduct = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ const AddProduct = () => {
     if (image) data.append('image', image);
 
     try {
-      const res = await fetch('/api/products', {
+      const res = await fetch(`${API}/api/products`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${user.token}` },
         body: data

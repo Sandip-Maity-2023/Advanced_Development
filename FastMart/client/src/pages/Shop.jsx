@@ -14,6 +14,7 @@ import { MdBakeryDining } from "react-icons/md";
 import { GiMilkCarton } from "react-icons/gi";
 import { GiTomato } from "react-icons/gi";
 
+const API = import.meta.env.VITE_API_URL;
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -27,7 +28,7 @@ const Shop = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch(`${API}/api/products`);
         const data = await res.json();
         setProducts(data);
       } catch (error) {

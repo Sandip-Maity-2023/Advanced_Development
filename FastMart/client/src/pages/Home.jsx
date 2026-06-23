@@ -6,6 +6,7 @@ import Bveg from "../assets/Bveg.png";
 import Breuse from "../assets/Breuse.png";
 import pro from "../assets/Bpro.png";
 import Bimg from "../assets/Bimg.png";
+const API = import.meta.env.VITE_API_URL;
 
 const BANNER_SLIDES = [
   {
@@ -60,7 +61,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch(`${API}/api/products`);
         const data = await res.json();
         setProducts(data.slice(0, 13)); 
       } catch (error) {

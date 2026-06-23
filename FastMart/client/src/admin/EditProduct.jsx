@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
+const API = import.meta.env.VITE_API_URL;
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -20,7 +21,7 @@ const EditProduct = () => {
 
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${id}`);
+        const res = await fetch(`${API}/api/products/${id}`);
         const data = await res.json();
         if (!res.ok) {
           setError(data.message || 'Unable to load product');
@@ -58,7 +59,7 @@ const EditProduct = () => {
     if (image) data.append('image', image);
 
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`${API}/api/products/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${user.token}` },
         body: data

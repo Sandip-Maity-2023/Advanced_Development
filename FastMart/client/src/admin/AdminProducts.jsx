@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+const API= import.meta.env.VITE_API_URL;
 
 const AdminProducts = () => {
   const { user } = useContext(AuthContext);
@@ -16,7 +17,7 @@ const AdminProducts = () => {
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch(`${API}/api/products`);
         const data = await res.json();
         if (!res.ok) {
           setError(data.message || 'Unable to load products');
@@ -34,7 +35,7 @@ const AdminProducts = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you strictly sure you want to delete this?')) {
       try {
-        const res = await fetch(`/api/products/${id}`, {
+        const res = await fetch(`${API}/api/products/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${user.token}` }
         });

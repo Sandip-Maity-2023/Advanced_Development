@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+const API = import.meta.env.VITE_API_URL;
 
 const AdminUsers = () => {
   const { user } = useContext(AuthContext);
@@ -16,7 +17,7 @@ const AdminUsers = () => {
 
     const fetchUsers = async () => {
       try {
-        const res = await fetch('/api/auth/users', {
+        const res = await fetch(`${API}/api/auth/users`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         const data = await res.json();

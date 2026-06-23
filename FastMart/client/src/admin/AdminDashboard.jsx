@@ -2,6 +2,8 @@ import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API= import.meta.env.VITE_API_URL;
+
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -15,7 +17,7 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/analytics', {
+        const res = await fetch(`${API}/api/analytics`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         const data = await res.json();
