@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Portfolio</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333333;
+            --accent-color: #4a90e2;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .portfolio-container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header Section */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #222;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e0e0e0;
+            margin: 30px 0;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 30px;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        /* Skills Tags */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .skill-tag {
+            background: #eef2f7;
+            color: #4f5d75;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .skill-tag:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* Contact Section & Interactivity */
+        .contact-details p {
+            margin-bottom: 8px;
+        }
+
+        .contact-details a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .contact-details a:hover {
+            text-decoration: underline;
+        }
+
+        .action-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        .action-btn:hover {
+            background-color: #357abd;
+        }
+
+        #greeting-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2e7d32;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="portfolio-container">
+        <header>
+            <h1 id="user-name">Sandip Maity</h1>
+            <p>Welcome to my profile! I am a passionate developer focused on building clean, efficient software solutions and exploring modern tech stacks to solve real-world problems.</p>
+        </header>
+
+        <hr>
+
+        <section>
+            <h2>About Me</h2>
+            <p>I am a Computer Science and Engineering student with a strong foundation in full-stack development and machine learning. I love architecting robust backends, designing intuitive frontends, and diving into algorithmic problem-solving.</p>
+        </section>
+
+        <section>
+            <h2>Skills</h2>
+            <div class="skills-container">
+                <span class="skill-tag">MongoDB & Atlas</span>
+                <span class="skill-tag">Express.js</span>
+                <span class="skill-tag">React.js</span>
+                <span class="skill-tag">Node.js</span>
+                <span class="skill-tag">Python</span>
+                <span class="skill-tag">C++</span>
+                <span class="skill-tag">Tailwind CSS</span>
+                <span class="skill-tag">Machine Learning</span>
+            </div>
+        </section>
+
+        <hr>
+
+        <section class="contact-details">
+            <h2>Contact Details</h2>
+            <p><strong>Email:</strong> <a href="mailto:sandipmaity@example.com">sandipmaity@example.com</a></p>
+            <p><strong>LinkedIn:</strong> <a href="#" target="_blank">linkedin.com/in/sandip-maity</a></p>
+            <button class="action-btn" id="connect-btn">Say Hello 👋</button>
+            <p id="greeting-msg"></p>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('connect-btn').addEventListener('click', function() {
+            const currentHour = new Date().getHours();
+            let greeting = "";
+
+            if (currentHour < 12) {
+                greeting = "Good morning! Thanks for stopping by. Let's connect!";
+            } else if (currentHour < 18) {
+                greeting = "Good afternoon! Thanks for checking out my profile!";
+            } else {
+                greeting = "Good evening! Hope you're having a great day!";
+            }
+
+            document.getElementById('greeting-msg').innerText = greeting;
+        });
+    </script>
+
+</body>
+</html>
