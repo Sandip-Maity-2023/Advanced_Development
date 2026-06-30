@@ -1,10 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { clearCart } from '../redux/cartSlice';
 const API = import.meta.env.VITE_API_URL;
-
 
 const Checkout = () => {
   const { user } = useContext(AuthContext);
@@ -15,6 +14,16 @@ const Checkout = () => {
   const [address, setAddress] = useState({
     fullName: '', street: '', city: '', postalCode: '', country: ''
   });
+
+  // Dynamically injects the Razorpay modal code when the component loads
+  useEffect(() => {
+    if (!window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
 
@@ -28,7 +37,6 @@ const Checkout = () => {
       const orderData = await orderRes.json();
 
       if (!orderRes.ok) {
-        // Razorpay unconfigured exception handler
         const fallback = window.confirm("Razorpay keys unconfigured on backend. Use Student Bypass Mode to place test order?");
         if (fallback) {
           return bypassPayment();
@@ -38,10 +46,10 @@ const Checkout = () => {
       }
 
       const options = {
-        key: 'rzp_test_dummykey123', // Student dummy fallback
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'ShopNest',
+        name: 'FastMart',
         description: 'Test Transaction',
         order_id: orderData.id,
         handler: async function (response) {
@@ -78,7 +86,7 @@ const Checkout = () => {
         prefill: {
           name: address.fullName,
           email: user?.email,
-          contact: '9999999999'
+          contact: '9002838596'
         },
         theme: {
           color: '#f97316'

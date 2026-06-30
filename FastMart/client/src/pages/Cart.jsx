@@ -35,6 +35,13 @@ const Cart = () => {
                 <img src={item.imageUrl} alt={item.name} className="cart-item-image" />
                 <div className="cart-item-details">
                   <h4>{item.name}</h4>
+
+                  <div className='cart-item-rating'>
+                    <span className="stars">⭐ {(item.ratings || 0).toFixed(1)}</span>
+                    <span className='reviews-count'>({item.numReviews} reviews)</span>
+
+                  </div>
+
                   <p>₹{item.price}</p>
                   <div className="qty-controls">
                     <button onClick={() => handleUpdateQty(item, item.qty - 1)}>-</button>
