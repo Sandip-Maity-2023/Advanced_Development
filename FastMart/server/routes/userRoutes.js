@@ -3,10 +3,13 @@ const router = express.Router();
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 
+
 /* ==========================================================================
    ROUTE: UPDATE USER PROFILE (Saves Base64 avatar text direct to Mongo)
    PATH: PUT /api/users/profile
    ========================================================================== */
+
+
 router.put('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
