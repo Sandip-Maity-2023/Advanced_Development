@@ -30,3 +30,4 @@ FRONTEND_URL=http://localhost:5173
 RAZORPAY_KEY_ID=xxxrzp_test_T4lGOPK57UshMpxxx
 RAZORPAY_KEY_SECRET=Qgn3IRYcieALEluruI661rRYxxx
 
+after the changes, go to render web , events->Manual Deploy ->Deploy latest commit
