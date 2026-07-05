@@ -56,13 +56,40 @@ connectDB();
 const app = express();
 
 // CORS Configuration
+// app.use(
+//   cors({
+//     origin: [
+//       'http://localhost:5173',
+//       'http://127.0.0.1:5173',
+//       process.env.FRONTEND_URL, // Your deployed frontend URL
+//     ],
+//     credentials: true,
+//   })
+// );
+
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL, // your stable production URL, e.g. https://fast2mart.vercel.app
+];
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      process.env.FRONTEND_URL, // Your deployed frontend URL
-    ],
+    origin: function (origin, callback) {
+      // allow requests with no origin (like curl, mobile apps, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/fast2mart-[a-z0-9]+-sandip-maity-2023s-projects\.vercel\.app$/.test(origin);
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked for origin: ${origin}`));
+      }
+    },
     credentials: true,
   })
 );
