@@ -88,7 +88,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/products',require('./routes/productRoutes'));
+// app.use('/api/products',require('./routes/productRoutes'));
 //app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Root Route
