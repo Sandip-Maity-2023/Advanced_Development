@@ -1,0 +1,5 @@
+.env
+details.txt
+node_modules
+dist
+.env.example
