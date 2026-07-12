@@ -34,3 +34,5 @@ after the changes, go to render web , events->Manual Deploy ->Deploy latest comm
 
 npm install chromadb @google/generative-ai
 docker run -p 8000:8000 chromadb/chroma
+
+https://fast2mart.vercel.app/
