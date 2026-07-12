@@ -27,4 +27,4 @@ dist-ssr
 node_modules
 dist
 details.txt
-.env.example
+
